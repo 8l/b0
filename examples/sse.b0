@@ -1,0 +1,148 @@
+#COMPILER_OPTION ELF;
+#COMPILER_OPTION UTF8;
+
+v4i vect4i;
+v4f vect4f;
+v2f vect2f;
+
+v4i[10] __v4i;
+v4f[12] __v4f;
+v2f[16] __v2f;
+
+struc my_sse{
+	m64 var1;
+	m64 _var1;
+	v4f var2;
+	v4i var3;
+	v2f var4;
+};
+
+my_sse[16] sse_var;
+
+proc main() {
+
+	v4i vect4i_2;
+	v4f vect4f_2;
+	v2f vect2f_2;
+	
+	v4i[10] __v4i_2;
+	v4f[12] __v4f_2;
+	v2f[16] __v2f_2;
+
+	r0 = &vect4i;
+	r0 = &vect4f;
+	r0 = &vect2f;
+	
+	r0 = &__v4i;
+	r0 = &__v4f[r1];
+	r0 = &__v2f[12];
+	
+	r0 = &vect4i_2;
+	r0 = &vect4f_2;
+	r0 = &vect2f_2;
+	
+	r0 = &__v4i_2;
+	r0 = &__v4f_2[r1];
+	r0 = &__v2f_2[12];
+	
+	#vector v4i;
+	#vector v4f;
+	#vector v2f;
+	!xmm0;
+	!xmm1;
+	
+	[r0] = xmm0;
+	[r1] = xmm2;
+	
+	r1 = 0;
+	
+	vect2f = xmm0;
+	vect4f = xmm0;
+	vect4i = xmm0;
+	
+	vect2f_2 = xmm0;
+	vect4f_2 = xmm0;
+	vect4i_2 = xmm0;
+	
+	__v4i[r1] = xmm0;
+	__v4f[r2] = xmm0;
+	__v2f[r3] = xmm0;
+	
+	__v4i_2[r4] = xmm0;
+	__v4f_2[r5] = xmm0;
+	__v2f_2[r8] = xmm0;
+	
+	xmm0 = [r1];
+	
+	sse_var[0].var2 = xmm0;
+	sse_var[r1].var3 = xmm0;
+	sse_var.var4 = xmm1;
+	
+	xmm1 = sse_var.var4;
+	xmm1 = vect2f;
+	
+	xmm4 = vect2f;
+	xmm5 = sse_var[r2].var2;
+	
+	xmm0 = xmm1;
+	xmm0 = xmm0;
+	
+	#vector v4f;
+	xmm0 = xmm0;
+	xmm1 = xmm1;
+	
+	xmm0 = xmm0 + xmm1;
+	xmm0 = xmm0 - xmm1;
+	xmm0 = xmm0 * xmm1;
+	xmm0 = xmm0 / xmm1;
+	xmm0 = xmm0 == xmm1;
+	xmm0 = xmm0 != xmm1;
+	xmm0 = xmm0 > xmm1;
+	xmm0 = xmm0 >= xmm1;
+	xmm0 = xmm0 < xmm1;
+	xmm0 = xmm0 <= xmm1;
+
+	xmm0 = xmm0 <<< xmm1;
+	xmm0 = xmm0 >>> xmm1;	
+	xmm0 = xmm0 && xmm1;
+	xmm0 = xmm0 ^ xmm1;
+	xmm0 = xmm0 | xmm1;
+	
+	#vector v2f;
+	xmm0 = xmm0;
+	xmm1 = xmm1;
+	
+	xmm0 = xmm0 + xmm1;
+	xmm0 = xmm0 - xmm1;
+	xmm0 = xmm0 * xmm1;
+	xmm0 = xmm0 / xmm1;
+	xmm0 = xmm0 == xmm1;
+	xmm0 = xmm0 != xmm1;
+	xmm0 = xmm0 > xmm1;
+	xmm0 = xmm0 >= xmm1;
+	xmm0 = xmm0 < xmm1;
+	xmm0 = xmm0 <= xmm1;
+	
+	xmm0 = xmm0 && xmm1;
+	xmm0 = xmm0 ^ xmm1;
+	xmm0 = xmm0 | xmm1;
+	
+	#vector v4i;
+	xmm0 = xmm0;
+	xmm1 = xmm1;
+	
+	xmm0 = xmm0 + xmm1;
+	xmm0 = xmm0 - xmm1;
+
+	xmm0 = xmm0 == xmm1;
+
+	xmm0 = xmm0 << xmm1;
+	xmm0 = xmm0 >> xmm1;
+	xmm0 = xmm0 <<< xmm1;
+	xmm0 = xmm0 >>> xmm1;	
+	xmm0 = xmm0 && xmm1;
+	xmm0 = xmm0 ^ xmm1;
+	xmm0 = xmm0 | xmm1;
+	
+	exit(0);
+	};

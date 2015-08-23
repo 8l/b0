@@ -1,0 +1,16 @@
+// Application "Hello World" for Linux;
+
+#define LOCAL_HEAP = 1000000h;			// Allocate 10MB for local thread heap;
+
+lib 'stdlib_linux.b0';				// Linux sys_calls
+lib 'stdlib_unicode.b0';			// Unicode conversion routines
+
+m16 string = 'Global String\n';
+
+proc main(){
+	r6 = memInit();				// Setup local variable buffer!
+	r0 = &string;
+	echo(r0);
+	exit(0);
+}
+

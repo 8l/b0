@@ -1,0 +1,116 @@
+// gtk+ 2.0 example for b0
+
+// Based on the GTK examples written by Sven Blumenstein (aka bazik).
+// which can be downloaded from the fasm website. This example was
+// originally written for fasm, and ported to b0...
+
+// This example shows a few things, primarily:
+//  1. Interface to general libraries.
+//  2. GTK v2.0 isn't that hard.
+//  3. It's easy to create GUI 64bit apps.
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+#COMPILER_OPTION UTF8 ELFO;
+
+lib 'gtk1.inc';
+
+extern gtk_init();
+extern gtk_window_new();
+extern gtk_widget_show();
+extern gtk_main();
+extern gtk_window_set_title();
+
+extern gtk_calendar_new();
+extern g_signal_connect_data(); // Was gtk_signal_connect() in gtk 1.2
+extern gtk_container_add();
+extern g_print();
+extern printf();
+extern calloc();
+
+m8 szDeleteEvent = 'delete_event';
+m8 szExitMsg = 'Closing the Application...\n';
+m8 szWindowTitle = 'b0 GTK+ v2.0 Demo Application';
+
+m64 hCalendar;
+m64 hWindow;
+
+// This is a wrapper for _calloc!
+proc memInit(){
+	push r4, r5;
+	r4 = LOCAL_HEAP;	// Let's get our local heap size
+	r5 = 1;
+	r0 = 0;
+	call calloc();
+	r15 = r0;
+	pop r5, r4;
+	return(r15);
+}
+
+proc main(argc, argv){
+
+	r6 = memInit();				// Setup local variable buffer!
+	push r6;
+	r6 = r7;
+	
+	r4 = 0;  // para1 = argc
+	r5 = 0;  // para2 = argv
+	r0 = 0;
+	call gtk_init();
+
+	r0 = 0;
+	call gtk_calendar_new();
+	hCalendar = r0;
+	
+	r4 = GTK_WINDOW_TOPLEVEL;
+	r0 = 0;
+	call gtk_window_new();
+	
+	hWindow = r0;
+	
+	r4 = hWindow;
+	r5 = &szWindowTitle;
+	r5 = r5 + 2; // Adjust pointer to skip the string size bytes.
+	r0 = 0;
+	call gtk_window_set_title();
+
+	r4 = hWindow;
+	r5 = &szDeleteEvent;
+	r5 = r5 + 2; // Adjust pointer to skip the string size bytes.
+	r3 = &DeleteEvent();
+	r2 = 0;
+	r8 = r2;
+	r9 = r2;
+	r0 = r2;
+	call g_signal_connect_data();
+
+	r4 = hWindow;
+	r5 = hCalendar;
+	r0 = 0;
+	call gtk_container_add();
+		
+	r4 = hCalendar;
+	r0 = 0;
+	call gtk_widget_show();
+
+	r4 = hWindow;
+	r0 = 0;
+	call gtk_widget_show();
+			
+	r0 = 0;
+	call gtk_main();
+
+}
+
+proc DeleteEvent(){
+
+	push r6;
+	r6 = r7;
+	r4 = &szExitMsg;
+	r4 = r4 + 2; // Adjust the pointer to skip the size bytes.
+	r0 = 0;
+	call g_print();
+	
+	pop r6;
+	exit(0);  
+};
+

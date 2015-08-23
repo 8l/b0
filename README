@@ -1,0 +1,73 @@
+B0 Compiler Package
+(c) Darran Kartaschew 2000-2008
+
+Released under a BSD licence.
+
+This package contains the b0 compiler and basic libraries needed
+to produce GNU\Linux 64bit (x86_64), FreeBSD 64bit, Solaris 11 x64
+or Windows x64 based applications. The compiler must be compiled 
+from source code before it can be used.
+
+(A 32bit version for i386 systems can also be built, by either
+running 'make b0-ia32', 'build i386' or uncommenting '#define i386'
+in ./src/b0.c).
+
+Pre-requisites:
+b0 only requires gcc 3.x, glibc (Development packages) and FASM. Most
+GNU/Linux distro's have these installed by default. GNU Make is 
+also needed to compile the compilers source, but you can build
+it manually if you so desire.
+
+For Windows XP x64 or Windows Vista x64, you'll need VC++ 2003,
+VC++ 2008 or VC++ 2005 Express Edn and FASM. Both VC++ 2003, 
+VC++ 2008 and VC++ 2005 Express Edn are available at no cost from 
+MS for non-commercial purposes. When obtaining VC++ 2005 Express Edn, 
+be sure to also download the latest Windows SDK to obtain the latest 
+API documentation.
+
+To install (GNU/Linux, FreeBSD, Solaris):
+>$ make linux 
+>$ gmake solaris
+>$ gmake freebsd
+>$ su -c "make install"
+>$ make clean
+
+To install (Windows):
+> build
+> build install
+> build clean
+
+Then add the environment variable B0_INCLUDE=/usr/local/include/b0
+eg.
+>$ SET B0_INCLUDE=/usr/local/include/b0
+
+or alternatively within ~/.profile add:
+
+export B0_INCLUDE="/usr/local/include/b0"
+
+and for Windows:
+1. Right-click 'My Computer' and select 'Properties'
+2. Select 'Advanced' Tab and 'Environment Variables'
+3. Add it in under 'User'.
+
+To Uninstall (as root):
+># make uninstall for Linux
+># gmake uninstall for FreeBSD/Solaris
+># build uninstall for Windows
+
+Once installed, runtime configuration can be viewed by
+>$ man b0
+
+A pdf manual can be built, however requires html2ps and Ghostscript
+to be installed, and therefore is not created by default. 
+Note: The manual is provided as html by default, and is found in the
+./doc directory. To make a pdf version of the user manual type
+>$ make docs
+
+The file 'b0.pdf' will be created, which can be viewed with any pdf 
+viewer. 
+
+Several examples for Linux, FreeBSD, Solaris and Windows x64 can be
+found in the ./examples directory.
+
+For further documentation see: ./doc/b0.html

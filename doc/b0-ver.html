@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" title="Modern" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" media="print" title="Modern" />
+		<script type="text/javascript" src="css/ui.js"></script>
+<title>B0</title>
+</head>
+<body>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="#styles" title="Increase font size" onclick="changeFontSize(1); return false;"><img src="css/fontsizelarger.gif" alt="Increase font size" /></a>
+				<a href="#styles" title="Decrease font size" onclick="changeFontSize(-1); return false;"><img src="css/fontsizesmaller.gif" alt="Decrease font size" /></a>
+				<a href="#styles" title="Toggle font serif" onclick="toggleSerif(); return false;"><img src="css/fontseriftoggle.gif" alt="Toggle font serif" /></a>
+				<a href="#styles" title="Revert styles to default" onclick="revertStyles(); return false;"><img src="css/reset.gif" alt="Revert styles" /></a>
+			</p>
+			<hr />
+			<p class="align_center">
+			<a href="b0.html#About"><img src="css/about.png" alt="About"/></a>&nbsp;
+			<a href="b0.html#Requirements"><img src="css/requirements.png" alt="Requirements"/></a>&nbsp;
+			<a href="b0.html#Documents"><img src="css/documents.png" alt="Documents"/></a>&nbsp;
+			<a href="b0-screenshots.html"><img src="css/scrnshots.png" alt="Screenshots"/></a>&nbsp;
+			<a href="forum/index.php"><img src="css/forum.png" alt="Forum"/></a>&nbsp;
+			<a href="b0.html#Downloads"><img src="css/downloads.png" alt="Downloads"/></a>
+			</p>
+			<hr />
+		</div>
+<div id="ContentArea">
+<h1><img alt="b0 Logo" src="css/b0.png" height="32" /> B0</h1>
+<p>Copyright &copy; 2000-2008, Darran Kartaschew</p>
+<h2>Version History</h2>
+<dl>
+<dt>05 May 2005 - v0.0.1</dt>
+<dd>First alpha - code generation nearly complete. Currently only
+generates temp files containing code, (eg doesn't produce code that
+can be passed through FASM just yet).</dd>
+<dt>07 May 2005 - v0.0.2</dt>
+<dd>Alpha release - Massive Code cleanup (over 200 lines removed).
+No functionality changes.</dd>
+<dt>08 May 2005 - v0.0.3</dt>
+<dd>Alpha release - Now allow for registers/strings to be passed as
+parameters for function calls.<br />
+Code refactoring removed another 100 lines of code. (current line
+count = 1922 lines)</dd>
+<dt>08 May 2005 - v0.0.4</dt>
+<dd>Alpha release - Activated most command line parameters. Only
+<code>-i&lt;include&gt;</code> doesn't work.<br />
+DEBUG info is now a command line switch, and not automatic. (That
+is info to help debug the compiler, and NOT the application)<br />
+Increased hash table size to 250,007 hashes. This does mean that
+the hash table takes upto 64MB by itself!<br />
+Improved Error reporting.<br />
+Fixed bug in library nesting.</dd>
+<dt>10 May 2005 - v0.0.5</dt>
+<dd>Alpha release - minor bugfixes<br />
+User Source code finalised to be UTF-8 due to limitations with the
+current available toolsets. (I've taken the lowest demoninator for
+current support, which is UTF-8).<br />
+Strings within your applications are now properly UTF-16
+encoded.<br />
+Immediates can be hexadecimal notation, in addition to decimal
+notation.<br />
+Global variables now accept multiple values, when
+preinitialised.<br />
+Procedures now accept immediate values as parameters.<br />
+Output options: elf, 0f and flat are now functional.<br />
+Include paths now work. Can include up to 255 paths. (from either
+the environment variable or the <code>-i</code> command line
+operator).</dd>
+<dt>16 May 2005 - v0.0.6</dt>
+<dd>Alpha release - Added rotate operators. (&lt;&lt;&lt; and
+&gt;&gt;&gt;)<br />
+Added signed MUL, DIV, and MOD operators.<br />
+Added signed comparisons, and comparison operators: &gt;=
+&lt;=.<br />
+Added non-64bit pointer operations.<br />
+Added FPU Regsiters (no operators as this stage), and FPU Memory
+sizes (m80).<br />
+Added workaround for text editors that insert a BOM into the start
+of UTF8 encoded text files. (eg Microsoft Notepad). Note: "<em>Use
+of a BOM is neither required nor recommended for UTF-8, ...</em>" -
+Unicode 4.1 Chap 2.6<br />
+Added IF-THEN-ELSE construct!</dd>
+<dt>28 May 2005 - v0.0.7</dt>
+<dd>A bit of a code restructure and refactorisation. (reduced line
+count to ~2690 lines before adding FPU handler code). Mainly in
+hash_table setup and refactoring to move similar code into separate
+functions.<br />
+Modified how FP variables will be declared. (Allows for unambigous
+fp-&gt;int conversions).<br />
+Fixed bug in handling IF-THEN-ELSE and WHILE-DO code. (more
+correctly, the way blocks are handled).<br />
+Added floating point declarations. (Integer declarations only
+accept integer or hexadecimal preinitialisation, and FPU
+declarations only accept float numbers).<br />
+Added floating point comparisons.<br />
+Added floating point loads/stores and math operations.<br />
+Added floating point stack dec/inc operators.<br />
+Fixed register load of pointer into array addressed by register. eg
+<code>r1 = &amp;my_array[r2];</code> now compiles correctly.<br />
+Added <code>-!</code> command line option.</dd>
+<dt>30 May 2005 - v0.0.8</dt>
+<dd>Added prefix "_B0_" to all variables and procedures names to
+ensure that assembler opcodes can be used in code without
+conflicting with the predefined opcodes.<br />
+Fixed ELF64 ouput to now be linkable, rather than a plain static
+linked executable. (Add <code>extern</code> keyword).<br />
+Add new output format <code>elfo</code> to output a linkable file
+in ELF format (WARNING: See the manual regarding object file
+creation and what type of code is required).</dd>
+<dt>08 June 2005 - v0.0.9</dt>
+<dd>Added basic preparser for allow for basic definitions and
+conditional compilation.<br />
+Added ability to nest <code>#ifdef</code> and <code>#ifndef</code>
+blocks.<br />
+Fixed bug, which allowed sourcecode to be processed when not part
+of a function, under some circumstances.</dd>
+<dt>10 June 2005 - v0.0.10</dt>
+<dd>Added #undefine keyword.<br />
+Started standard library.<br />
+Added allowance to use multiple regs, separated by commas for
+<code>push</code> and <code>pop</code> keywords.<br />
+Fixed bug in proc definitions (regarding destroying the previous
+local label definitions).</dd>
+<dt>25 June 2005 - v0.0.11</dt>
+<dd>Source code reorganisation<br />
+Clean up code to gain better ANSI C99 compliance<br />
+Added checks for VC++ 2005 (stops emitting warnings on what M$
+consider are deprecated calls).<br />
+Compiles under gcc 3.3 correctly (tested within INTERIX
+environment).</dd>
+<dt>20 July 2005 - v0.0.12</dt>
+<dd>Added initial support structures, however still lots to do.<br />
+Fixed bug when producing elf object files (exporting local
+variables now fixed).<br />
+Fixed bug in stack allocation for called procedures/functions.<br />
+Fixed bug in string length calculations.<br />
+Fixed bugs in unicode conversion and linux stdlibs. (Both should be
+considered incomplete at this stage).<br />
+Added 2 linux examples. <code>le.b0</code> and
+<code>le2.b0</code>.<br />
+Development environment moved to CRUX v2.1 - (AMD64).<br />
+Source code compiles cleanly on:
+<ul>
+<li>Windows using VC++2003 and VC++2005.</li>
+<li>Interix (Microsoft Services for Unix) using gcc 3.3.</li>
+<li>(Linux) CRUX v2.1 (AMD64) using gcc 3.4.3. (Examples tested
+within this environment).</li>
+</ul>
+Man page added to distro for *nix based systems.</dd>
+<dt>15 August 2005 - v0.0.13</dt>
+<dd>Structures have been added. (Generated code is somewhat sloppy
+but works correctly, I plan to improve the code over the next few
+releases).<br />
+Fixed bug in ELF64 object file creation. (Fix export of main()
+correctly and adjust section flags for data section).<br />
+Fixed improper generation of "<code>mov mem64, imm64</code>" which
+doesn't exist. Fasm will change it to "<code>mov mem64,
+imm32</code>" if the immediate is smaller than 32bits, else
+generate error if immediate is larger.<br />
+Added <code>jmp</code>, <code>call</code>, and <code>ret</code>
+keywords.<br />
+Tested with fasm v1.64!<br />
+Modified way that variables are handled within the compiler,
+resulting in slight speed up.<br /></dd>
+<dt>15 October 2005 - v0.0.14</dt>
+<dd>Improved address generation code for variables.<br />
+Fixed bug in structure declarations, (relates to the way the close
+block token was handled).<br />
+Updated and corrected User Manual.<br />
+Added section in Makefile to generate PDF manual from HTML source,
+(requires html2ps and ghostscript).<br />
+Improved handled of uninitialised data and generation of bss.<br />
+Added <code>in</code> and <code>out</code> keywords.<br />
+Corrected bug, when handling included files. (now saves and
+restores current char in file before loading new file).<br />
+Fixed up source line calculations when aborting on error. (should
+now be accurate, unless you use CR (U+000dh) as the line break, in which case
+line count won't mean squat - Damn Mac's. Well at least it works on
+Windows and *nix).<br />
+This release took a little longer, due to having a personal
+life.<br />
+Corrected bug when using multiply libraries embedded in each other.
+(classic off-by-one error).<br />
+Reorganised source tree and Makefile (*nix systems).<br />
+Added ability to use zero-offset structures. (similar to the
+virtual keyword in fasm).<br /></dd>
+<dt>25 October 2005 - v0.0.15</dt>
+<dd>The Windows x64 release! (PE64 is now available as an output
+format).<br />
+Extended 'extern' keyword for PE64 support.</dd>
+<dt>09 January 2006 - v0.0.16</dt>
+<dd>GTK v1.2 and GTK v2.0 examples provided for Linux (same app,
+just using different GTK versions).<br />
+Partial Linux Syscall wrapper library. (Linux only).<br />
+Added ability to encode strings as <code>m8</code>. These are
+encoded as UTF-8 in the asm output file.<br />
+Added a CGI example. (Yes, a CGI for web applications! see
+<code>/examples/cgi1.b0</code>)<br />
+Fixed bug where on a comment on the last line would cause the
+compiler into an endless loop.<br />
+Couple of other bugfixes, regarding end-of-line and end-of-file
+markers.<br />
+Fixed bug when generating UTF8 strings.<br />
+Added ability to jump based on the following CPU Flags: Parity,
+Carry, Overflow, Sign and Zero flags.<br />
+Included <a href="jedit/b0.xml">b0.xml</a> style sheet for jEdit users.
+(Copy into the modes directory and add the item to the catalogue
+file).<br />
+<b>And Merry Christmas and a Happy New Year to all!</b><br /></dd>
+<dt>09 January 2006 - v0.0.16 - IA32</dt>
+<dd>A one time only port of b0 to produce IA-32 (aka i386)
+applications for Linux and Windows. Extract the main distribution,
+and goto ./src/ia32/. See the README file inclosed.</dd>
+<dt>16 January 2006 - v0.0.17</dt>
+<dd>Merged IA32 and AMD64 builds into single source file. Only
+requires a define to be added to build the IA32 version, eg -Di386
+at the CLI.<br />
+Modified the <code>while</code> to produce slightly better
+code.<br />
+Modified output in regards to error strings.<br />
+Modified demo <code>le5.b0</code> to also output <code>argc</code>
+and <code>argv</code> variables.<br />
+Added <code>COMPILER_OPTION</code> keyword to let the user set the
+output format and string type from within the source file.<br />
+Updated *nix man file.<br />
+Added ability to change the string format (UTF8/UTF16) on the fly
+within the source code file, by using the
+<code>COMPILER_OPTION</code> keyword.<br />
+Added additional buffer overflow checks on all structures and
+arrays...<br /></dd>
+<dt>14 February 2006 - v0.0.18</dt>
+<dd>Added check for main(); when producing ELF executables.<br />
+Started rewriting the b0 compiler in b0.<br />
+Fixed bug in preprocessor, which was turning '-' characters within
+the string to a subtract token.<br />
+Fixed bug in preprocessor, which will skip #endif if directly
+proceeded by a } and set to not generate code (as part of a
+#ifdef/#ifndef condition).<br />
+Removed 0F and Flat output formats.<br />
+Fixed bug in call procedure routine when dealing with PE
+executables.<br />
+Fixed bug on performing signed compliment on floating point
+registers.<br />
+Fixed bug in preprocesser when dealing with 0 offset
+structures.<br />
+Fixed bug in call procedure when processing arguments. (It was
+possible to run off the token stack).<br /></dd>
+<dt>20 April 2006 - v0.0.19</dt>
+<dd>Modified ELF output for updates in fasm 1.65.13. If using
+v0.0.19, I HIGHLY recommend that you upgrade to fasm to at least
+v1.65.13.<br />
+Added <code>DISABLESTACKFRAME</code> and
+<code>ENABLESTACKFRAME</code> compiler option directives.
+(Enables/Disables the creation of stack frames on function
+calls).<br />
+b0 compiler written in b0 is now available as an ELFO object
+file to be linked with libc**. (Win64 and Linux native versions 
+still be tested). <em>** There are still a few bugs in the 
+preprocessor, in relation to floating point definitions. If you 
+avoid floating point definitions, you should be okay. Problems
+are in atof(); and ftoa();</em><br />
+Added ability to have multiple <code>-i</code> command line
+arguments.<br />
+Added ability to load immediate (dword integer only) when using
+global pointers. eg <code>[r15+r14*8] = -1;</code><br />
+When compiling with MSVC++ path separator is &quot;;&quot; else 
+it's &quot;:&quot; (for *nix systems).<br />
+Added ability to load a register with the calculation of a
+complex pointer. (eg <code>r0 = &amp;[r0+r0*4];</code> maps to
+the <code>lea</code> assembler mnemonic or <code>lea r0, 
+[r0+r0*4]</code>).<br />
+Fixed bug in NOT and NEG operations.<br />
+Fixed bug when using global pointers. (<code>{reg} = 
+[{reg}-{immediate}]</code> no longer generates an error).<br />
+Fixed bug <code>IN</code>/<code>OUT</code> instructions.<br />
+Fixed bug in <code>while({FPU_REG}){ };</code> code sequence.<br />
+Included ability to handle 1.0e10 formatted floating point
+numbers, (previously restricted to straight 1.0 format, that
+is no exponent could previously be defined).<br />
+Included ability to use the shift operator with the preprocessor
+only when dealing with integer values.<br />
+Note: This will be the final C version. All code maintenance will
+be performed on the b0 version of the compiler.<br />
+</dd>
+<dt>03 June 07 - v0.0.20</dt>
+<dd>Yep, that's right over a year of development, I guess Real Life&#8482;
+got in the way.<br />
+Linux (18-Jun-06), Windows (17-May-07) and FreeBSD (26-Apr-07) 
+native versions of the b0 compiler.<br />
+Fixed ftoa(); and atof(); functions.<br />
+Fixed deeply nested #ifdef/#else/#endif structures. (Under some
+circumstances, the #else would reactive code generation when it
+shouldn't).<br />
+Fixed processing of end block's when code generation is off,
+when end block preceeds #else or #endif<br />
+Fixed floating point definitions storage.<br />
+Added switch to create Window DLL Files. (-fdll or #COMPILER_OPTION
+DLL 'mydll.dll').<br />
+Added compiler option to include pre-compiled resource files. 
+(#COMPILER_OPTION RSRC 'myres.res')<br />
+Start optimising compiler for performance (The b0 source version is
+roughly 50% larger than the C source version, and processes roughly
+65K lines per second (b0 ver) vs. 143K lines per second (C ver) on
+my 1.6GHz Opteron 242).<br />
+Integer/Float bounds checking added for immediate operations.<br />
+Restructed how immediates are handled internally, improving
+processing throughput.<br />
+Due to certain factors, the standard library will no longer
+be actively developed. If others wish to continue to develop
+the standard library, they are more than welcome to do so.<br />
+Included <a href="gedit/b0.lang">b0.lang</a> style sheet for gEdit users
+(aka GNOME users).
+(Copy into the /usr/X11R6/share/gnome/gtksourceview-1.0/language-specs 
+directory and add the following <a href="gedit/x-b0.xml">x-b0.xml</a> and
+<a href="gedit/b0.xml">b0.xml</a> to the GNOME mime database).<br />
+GTK Examples cleaned up (removed all linux dependencies, now build
+correctly on FreeBSD as well as Linux).<br />
+Added a resource section into the Windows binary, including icons
+for the application and *.b0 source files. Registry file in src\rsrc
+will add the icon and file associations (done automatically if
+you run <code>build install</code> if installing from source, or if
+you use the *.msi installation file. (You still need to define
+which application to open the file).<br />
+Added a shiny new logo to the website, and made it the default
+icon for the b0 compiler and documents.<br />
+</dd>
+<dt>17 December 07 - v0.0.21</dt>
+<dd>Added <code>-o</code> option to define output filename.<br />
+Added ability for Compiler to be generated as either a DLL or *.o file
+so you can link to the compiler to another 3rd party tool.
+(See ./b0/src/b0_c/b0.c or ./b0/src/b0_dll/b0.b0 as examplea). Note: If you detect a 
+resource leak, either file handle or memory mallocation, please contact me
+ASAP.<br />
+Added buffered input for FreeBSD build target.<br />
+Added Sun Solaris 11 Native Version.<br />
+Cleaned up build infrastructure for Windows and *nix. (No more editing 
+b0.b0 to define the build target environment).<br />
+Improved temporary file handling. (especially when performing 
+<code>$ gmake -j3</code> type builds).<br />
+Added Vector (aka SSE) operations.<br />
+Started on Macro support.<br />
+</dd>
+<dt>17 December 07 - v0.1.0</dt>
+<dd>
+B0 for Windows x64 released. Integrates b0 v0.0.21 compiler.
+</dd>
+<dt>01 February 08 - v0.0.22</dt>
+<dd>
+Finalised macro support.<br />
+Fixed bug with mulitple start block statements that are not proceeded by instructions.<br />
+Added Spinlock and Mutex support.<br />
+Fixed paste bug in Windows IDE.<br />
+Fixed b0 language definition file within IDE.<br />
+Added File Revert/Reload function in IDE.<br />
+Added very basic Print support in IDE.<br />
+Added External Tool support in IDE.<br />
+Added Split Window text pane support in IDE.<br />
+</dd>
+<dt>29 April 08 - v0.0.23</dt>
+<dd>
+Added EXPLICITEXPORT keyword for symbol exports.<br />
+Rewrote the preprocessor from scratch. (and yes it's still craptacualar).<br />
+Added ability to use strings as defines.<br />
+</dd>
+</dl>
+
+</div>
+		<div class="noprint">
+			<hr />
+			<p class="align_right">
+				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1" height="31" width="88" /></a>
+			</p>
+		</div>
+</body>
+</html>

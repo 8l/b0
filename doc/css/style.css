@@ -1,0 +1,48 @@
+body {
+	text-align: justify;
+	padding-left: 20pt;
+	padding-right: 20pt;
+	margin-top: 10px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: 10px;
+	color: black;
+	background-color: white;
+	background-image: url(./bkgnd.gif);
+	background-attachment: fixed;
+	font-family: Verdana, Tahoma, arial, sans-serif;
+	font-size: 12px;
+}
+
+body hr {
+	background-color: black;
+	color : black;
+	height: 1px;
+	border: 0px;
+}
+
+body dt {
+	font-weight: bold;
+}
+
+body a {
+	color: black;
+	font-weight: bold;
+}
+body img {
+	border: 0;
+}
+	
+body#Content div#ContentArea h1 {
+}
+
+body#Content div#ContentArea p {
+}
+
+.align_right {
+	text-align: right;
+}
+
+.align_center {
+	text-align: center;
+}

@@ -1,0 +1,258 @@
+// Application "Hello World" for Linux;
+
+#COMPILER_OPTION UTF8 ELFO;
+
+lib 'std_char.b0';
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+#define STDIN  = 00h;
+#define STDOUT = 01h;
+#define STDERR = 02h;
+
+m64 _stdin;
+m64 _stdout;
+m64 _stderr;
+
+m64 argc;
+m64 argv;
+m64 argp;
+
+extern stdin();
+extern stdout();
+extern stderr();
+extern fprintf();
+
+m8 demo_string1 = 'argc = ';
+m8 demo_string2 = '\nargv = ';
+m8 demo_string3 = ' (pointer to arg pointers)\nargp = ';
+m8 demo_string4 = ' (pointer to environment pointers)\n\n';
+
+proc memInit(){
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;			// Get top of memory
+	r0 = 045;			// sys_brk
+	syscall;
+	r15 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;			// set new top of bss
+	return(r15);
+}
+
+proc __Init_libc(){
+	//Initialise the default file handles!
+	push r1;
+	r1 = &stdin();
+	r1 = [r1];
+	_stdin = r1;
+	r1 = &stdout();
+	r1 = [r1];
+	_stdout = r1;
+	r1 = &stderr();
+	r1 = [r1];
+	_stderr = r1;
+	pop r1;
+}
+
+proc echo_string(handle, string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){ 
+		r4 = _stdin;
+	} else { 
+		r0 = STDOUT; 
+		if(r4 == r0){ 
+			r4 = _stdout;
+		} else { 
+			r0 = STDERR; 
+			if(r4 == r0){ 
+				r4 = _stderr;
+			}
+		}
+	}	
+	handle = r4;    // r4 = 1st arg
+	r5 = &'%s';	
+	r5 = r5 + 2;	// r5 = 2nd arg
+	r3 = string;
+	r3 = r3 + 2;	// r3 = 3rd arg
+	push r6;
+	r6 = r7;		// Setup stack frame compatible with libc
+	r0 = 0;			// r0 = Num of FP args
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc echo_hex(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}
+	handle = r4;
+	r5 = &'0%lxh';
+	r5 = r5 + 2;
+	r3 = integer;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc _getenv(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = argp;
+	r10 = string;
+	if(r1){
+		r4 = 0;			// pointer to string;
+		r5 = 0;			// zero result for strcmp;
+		r2 = 0;  		// r2 = count
+		r3 = [r1+r2*8];	// r3 = pointer to string;
+		while (r3){
+			r8 = _strcmp_env(r3, r10);
+			if(r8 == r5){
+				r4 = r3;	// we have a match;
+			}
+			r2 = r2 + 1;
+			r3 = [r1+r2*8];
+		}
+		r0 = r4;
+	} else {
+		r0 = 0;
+	}
+	
+	if(r0){
+		// we have a string;
+		r1 = CHAR_EQU;
+		r2 = r2 ^ r2;
+		r2b = [r0];
+		while(r1 != r2){
+			r0 = r0 + 1;
+			r2b = [r0];
+		}
+		r0 = r0 + 1;
+	}
+
+	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _strcmp_env(src1, src2) { //rtns non-zero if different. src1 = ASCIIZ, src2 = b0.
+	push r1, r2, r3, r4, r5;
+	r4 = src1;
+	r5 = src2;
+	r5 = r5 + 2;
+	r2 = 1;			// Our count;
+	r0 = r0 ^ r0;
+	r1 = r0;
+	r3 = r0;
+	r0b = [r4];
+	r1b = [r5];
+	while (r0 == r1){
+		if (r0 == r3){
+			// We have reached the end of the string;
+			pop r5, r4, r3, r2, r1;
+			return(0);
+		}
+		r4 = r4 + 1;
+		r5 = r5 + 1;
+		r2 = r2 + 1;
+		r0b = [r4];
+		r1b = [r5];
+	}
+	if(r1 == r3){
+		r2 = 0;
+	}
+	r0 = r2;
+	//r0 = r0 - 1;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc main(){
+	
+	#COMPILER_OPTION DISABLESTACKFRAME;
+
+	push r3, r4, r5;
+	
+	r6 = memInit();				// Setup local variable buffer!
+
+	pop r5, r4, r3;
+	argc = r4;					// On application initialisation argc = edi
+	argv = r5;					// and argv = rsi
+	argp = r3;
+	
+	__Init_libc();
+	
+	push r6;
+	r6 = r6 + 20h;
+	r0 = &demo_string1;
+	echo_string(STDOUT, r0);
+	echo_hex(STDOUT, r4);
+	r0 = &demo_string2;
+	echo_string(STDOUT, r0);
+	echo_hex(STDOUT, r5);
+	r0 = &demo_string3;
+	echo_string(STDOUT, r0);
+	echo_hex(STDOUT, r3);
+	r0 = &demo_string4;
+	echo_string(STDOUT, r0);
+	
+	r1 = 0;
+	while (r1 < r4){
+		r2 = [r5+r1*8];
+		echo_string(STDOUT, '&argv[');
+		echo_hex(STDOUT, r1);
+		echo_string(STDOUT, '] = ');
+		echo_hex(STDOUT, r2);
+		echo_string(STDOUT, ' ; "');
+		r2 = r2 - 2;  // We do this as echo_string(); expects a b0 type string, but ignores the size bytes.
+		echo_string(STDOUT, r2);
+		echo_string(STDOUT, '"\n');
+		r1 = r1 + 1;
+	}
+	echo_string(STDOUT, '\n');
+	r1 = 0;
+	r2 = [r3+r1*8];		// pointer to first string;
+	while (r2){
+		echo_string(STDOUT, '&argp[');
+		echo_hex(STDOUT, r1);
+		echo_string(STDOUT, '] = ');
+		echo_hex(STDOUT, r2);
+		echo_string(STDOUT, ' ; "');
+		r2 = r2 - 2;  // We do this as echo_string(); expects a b0 type string, but ignores the size bytes.
+		echo_string(STDOUT, r2);
+		echo_string(STDOUT, '"\n');
+		r1 = r1 + 1;
+		r2 = [r3+r1*8];
+	}
+	
+	pop r6;	
+	#COMPILER_OPTION ENABLESTACKFRAME;
+	
+	r1 = _getenv('B0_INCLUDE');
+	if(r1){
+		echo_string(STDOUT, 'Found B0_INCLUDE!\n');
+		r1 = r1 - 2;
+		echo_string(STDOUT, r1);
+		echo_string(STDOUT, '\n');
+	}
+	exit(0);
+}
+

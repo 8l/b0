@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" title="Modern" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" media="print" title="Modern" />
+		<script type="text/javascript" src="css/ui.js"></script>
+<title>B0 Internals</title>
+</head>
+<body>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="#styles" title="Increase font size" onclick="changeFontSize(1); return false;"><img src="css/fontsizelarger.gif" alt="Increase font size" /></a>
+				<a href="#styles" title="Decrease font size" onclick="changeFontSize(-1); return false;"><img src="css/fontsizesmaller.gif" alt="Decrease font size" /></a>
+				<a href="#styles" title="Toggle font serif" onclick="toggleSerif(); return false;"><img src="css/fontseriftoggle.gif" alt="Toggle font serif" /></a>
+				<a href="#styles" title="Revert styles to default" onclick="revertStyles(); return false;"><img src="css/reset.gif" alt="Revert styles" /></a>
+			</p>
+			<hr />
+			<p class="align_center">
+			<a href="b0.html#About"><img src="css/about.png" alt="About"/></a>&nbsp;
+			<a href="b0.html#Requirements"><img src="css/requirements.png" alt="Requirements"/></a>&nbsp;
+			<a href="b0.html#Documents"><img src="css/documents.png" alt="Documents"/></a>&nbsp;
+			<a href="b0-screenshots.html"><img src="css/scrnshots.png" alt="Screenshots"/></a>&nbsp;
+			<a href="forum/index.php"><img src="css/forum.png" alt="Forum"/></a>&nbsp;
+			<a href="b0.html#Downloads"><img src="css/downloads.png" alt="Downloads"/></a>
+			</p>
+			<hr />
+		</div>
+<div id="ContentArea">
+<h1><img alt="b0 Logo" src="css/b0.png" height="32" /> B0 Internals</h1>
+
+<p>Copyright &copy; 2000-2008, Darran Kartaschew</p>
+
+<p>All Items contained within this site are released under the BSD License!</p>
+
+<h2>Introduction</h2>
+
+<p>B0 the language and this implementation are release under the BSD license, and in doing so, I wanted to aid any developer who wished to make their own implementation, by giving a guided tour of the current implementation, as made by me, so this can be truely given the freedom that is deserves!</p>
+
+<h2>Why the BSD License?</h2>
+
+<p>Why any license? I guess each developer has his own preferred license as to which they release their own open-source applications. For a long time, I have used many free close-source and open source applications, and this is jsut my way of giving something back to the community.</p>
+
+<p>Because I developed B0 for me, and only for me (well it was made to help me learn more about compiler theory, and so I could make an easy-to-use assembler like language during development of other software), I have no interest in making cash off it. So that others could enjoy it virtually unrestricted (while still maintaining credit), I released both the language and this implementation under the BSD License.</p>
+
+<h2>Design decisions</h2>
+
+<p>This is just a few paragraphs about some of the higher level decisions that went into developing B0.</p>
+
+<h3>History</h3>
+
+<p>I'm a typical assembler programming, I like coding to the raw metal, however the typical speed at which most assembler is written is cumbersome.</p>
+
+<p>Also not having developed my own language, (how many programmers, can state, that they have developed and *implemented* a working version of their own language?), it was something that I wanted to try.</p>
+
+<p>I stated by having a quick read of the FAQ associated with news://comp.compilers, and following some of the links I found to some of the many online sources on compiler thoery.</p>
+
+<p>I read through about 4 or 5 texts, before starting, just so I understood many of the techniques. I also made the decision not to use yacc/bison and friends, but to do it from scratch...</p>
+
+<p>The texts I used in the beginning, were by J. Crenshaw and N. Wirth, as models for the actual compiler. (Note: both of these use Pascal or similar and NOT C for code samples).</p>
+
+<h3>Why so low level?</h3>
+
+<p>That's the assembler programmer in me. Short, sharp and to the point. Also I wanted the language NOT to hide anything from the programmer. But to do that, you have to give the programmer the CPU registers to play with.</p>
+
+<h3>Why this style of notation?</h3>
+
+<p>Becuase it's more HLL programmer friendly. If you showed a typically programmer what each of these did, which one is the most obvious? <code> r0 = r1;</code> or <code> mov r0, r1</code>? The first one of course, even though both do the *exact* same thing.</p>
+
+<h3>64bits?</h3>
+
+<p>Well the Opteron and Athlon 64 have been out for some time, Intel has released their implementation (aka w/EM64T), Linux/*BSD has been running on it for a while, and now Windows for x64 has been released, so why not? While current market share for 64bit enabled x86 chips is relatively low compared to the 32bit parts, it's still a void that needs to be filled.</p>
+
+<h3>Why generate assembler output, and not generate machine code?</h3>
+
+<p>Easy to debug the compiler, and also I can let others worry about the final asm->ML conversion, as well as object file formats.</p>
+
+<h3>Why do it in C?</h3>
+
+<p>Seriously, to brush up on my C. I haven't coded in C for a number of years, and I though I would brush up on it. The actual C implementation, will show how newbish in C I am, but what the heck!</p>
+
+<h2>The flow of the Code!</h2>
+
+<h3>Major Components</h3>
+
+<p>The following sections outline the major components on this implementation, and most of the compilers out there. I will add the disclaimer, that this is most likely not the best way to make a compiler, but it works.</p>
+
+<h4>Data Structures</h4>
+
+<p>There are 2 major data structures, and 3 minor structures within the B0 implementation.</p>
+
+<h5>The Hash Table</h5>
+
+<p>The Hash or symbol table is the first major data structure within the current implementation. The Table holds all the symbols/labels in use during compilation, including information about the symbol/label. The current implementation is using a closed-hash table with up to 250,007 hashes or slots available, and utilises 66MB for those entries (roughly 280bytes per entry). The Hash Table is by far the memory hog of the current implementation.</p>
+
+<h5>The token stack</h5>
+
+<p>The second major data structure is the Token stack, which holds the tokenised input stream. This is a simple array of up to 1024 elements (or tokens). Note: the size of this array is controlled by a single define at the start of the source code.</p>
+
+<h5>The file stack</h5>
+
+<p>The first of the minor structures, it holds the file handles and filenames of the files currently being processed. It can hold up to 32 file handles and names, which means that the current implementation can handle up to 32 deep library inclusions.</p>
+
+<h5>The include Path stack</h5>
+
+<p>The second minor structure, holds all the include path names, and is used when searching for included files.</p>
+
+<h5>The If-While Stack</h5>
+
+<p>This stack holds the current conditions and state as used by the IF-THEN-ELSE and WHILE-DO statements. This structure enables easy handling of the above syntax contexts.</p>
+
+<h4>The Tokeniser</h4>
+
+<p>The tokeniser, is rather simple in implementation. It's by no means the best, but it's simple. It' sole function to convert your raw UTF8 encoded input into a tokenised form, which can easily be analysised, and have resulting code produced.</p>
+
+<p>It converts symbols into their equivalent token values, strings into an internal UTF32 form, numbers as is, and labels into a single token, (irrespective of the number of characters a token has).</p>
+
+<p>Numbers have a range of '0'-'9', labels/keywords start at 010000000h, and operator tokens are between 01000000h and 100100h within the token stack. Labels have their hash value added to 010000000h, before being placed onto the stack. In summary:</p>
+
+<ul>
+<li>Numbers: - 30h -&gt; 39h;</li>
+
+<li>Strings: TOKEN_STRING, 0h -&gt; 10ffffh, TOKEN_STRING END;</li>
+
+<li>Tokens: 01000000h -&gt; 0100100h;</li>
+
+<li>Labels/Keywords: 010000000h + </li>
+</ul>
+
+<p>Strings are marked with a string start token, and followed by the UTF32 encodings, until the string end token is reached. As can be seen, it's easy to tell what an item on the token stack is, by it's value (in the broad sense).</p>
+
+<p>All multi-character operators (eg ==, &gt;=, ~*) are all turned into a single token, simplifing token-&gt;code generation.</p>
+
+<p>The tokeniser also has another role, to call the token-&gt;code generator when an end-of-statement appears, and also call the block function which helps handle the IF-THEN and WHILE-DO stack.</p>
+
+<h4>Hashing</h4>
+
+<p>As already mentioned the hash table is a closed-hash table, which means it's limited to the number of elements it can hold. A closed-hash table was choosen, as it's easier to implement. The code (hopefully) has been written in such a way, that it should be easy to change the hash table format, or even change to an open-hash table.</p>
+
+<p>After some discussion of hash algorithms in news://alt.lang.asm, I decided to stick with the tried and true ELFHASH algorithm. (The one used for calculating hashes used in the UNIX ELF file format). The holy grail of hash algorithms, is to find a hash algorithms that can produce a unique hash for any given input of a specified domain. Like most holy grails, it doesn't exist. The average programmer is better off using a common and high performance algorithm, and handle hash collisions gracefully, than try to produce no collisions at all, and then either assume that collisions don't exist, or handle them poorly.</p>
+
+<p>In the event of a hash collision, that is 2 non-equal symbols produce the same hash, I used linear rehashing. (A Dr Dobbs article showed that, is most cases a linear rehash is quicker than a full rehash, due to cache/memory issues as well as performance of the rehash). Plus linear rehash is simple. If a collision is found increment the hash value by 1, and keep doing so until a free slot in the hash table is found. The problem, linear rehashing isn't that great when the hash table gets over 80% full, as you tend to hit more non-free slots, than free slots.</p>
+
+<p>The current implementation, will only let a rehash attempt of a symbol equal to the size of the hash table, eg 250,007 times. If it can't find a free slot, it's assumed that the table is full, and we exit gracefully, with an error that too many symbols have been used.</p>
+
+<p>I would just like to add, that local symbols/labels (eg those that are declared within a procedure) are removed from the hash table at the start of the procedure declaration, freeing room for more symbols. So while there may be over 250,000 unique symbols within an application, many of the hash positions get recycled, and in theory the number of symbols may be actually infinite.</p>
+
+<p>Also why the odd size for the hash table? Why not make it 250,000 hashes, instead of 250,007? Well 250,007 is a prime number. The ELFHASH algorithm produces a 32bit hash for the given input. And dividing by a prime, reduces the chance of a collision due to factorisation of the divisor. (The hash itself is used as the index into the hash table).</p>
+
+<h4>Token Stack to Code Generation</h4>
+
+<p>This probably the heart of the compiler. It's also one of the most complex, well not complex, more ackward.</p>
+
+<p>The core of the function, is just a very large <code>switch()</code> statement, which branches into other smaller IF-THEN-ELSE and <code>switch()</code> statements until the token stack has been turned into code, or if something doesn't make sense, exit with an error.</p>
+
+<p>The first <code>switch()</code> statement works on the very first token in the stack, and just runs that case.</p>
+
+<p>The only symbols, not to appear on the stack are { and ;. These are used by the tokeniser to call the token-&gt;code generator. } symbols are placed into the token stack, and handled in such a way that handling the ELSE keyword in easy.</p>
+
+<h4>Object Format Creation</h4>
+
+<p>The actual creation of source code for each object is done right at the end of the whole compiler process, and isn't done until all the code and data definitions are complete. All that really happens, is that the appropriate headers are attached to the code/data output. Adding other formats is easy because of the technique.</p>
+
+<h3>How it all fits together</h3>
+
+<p>Well, the following process is used:</p>
+
+<ol>
+<li>Read the command line parameters, and display help if asked or no source file name is provided.</li>
+
+<li>Insert all the keyword tokens into the hash table.</li>
+
+<li>Attempt to open the source file, and if so, create 2 temp files (one for code, the other for data declarations).</li>
+
+<li>Start reading the file, by calling <code>block()</code> which calls <code>nextToken()</code> which is the tokeniser.</li>
+
+<li>The tokeniser keeps going, until either:
+<ol>
+<li>The token stack is full, (in which case exit with error)</li>
+
+<li>Or, we reach a end of statement marker, eg ; or {. In which case call <code>processTokenStack()</code>.</li>
+</ol>
+</li>
+<li><code>processTokenStack()</code> reads the tokenised input, and converts it to code/data declarations. Once completed converting the tokenised input without error, we return back to the tokeniser.</li>
+
+<li>Back in the tokeniser we continue to step 5 above, unless we run out of source code file to read.</li>
+
+<li>If at the end of the source code, call <code>processTokenStack()</code> to clear out the token stack, else jump back up to step 5 above.</li>
+
+<li>Using the output format, create a new file and dump the appropriate header to the newly created file. Copy the data and code temp files to the new file, and close the new file.</li>
+
+<li>Delete the temp files</li>
+
+<li>And we are done!</li>
+</ol>
+
+<h2>The C Implementation</h2>
+
+<h3>Introduction</h3>
+
+<p>This tutorial of the source, only relates the version 0.0.6. (Download <a href="b0.c">v0.0.6</a>) Other versions may have grown and/or changed how things are handled. v0.0.6 is also simple enough that getting through the code is easy. (At just over 3000 lines of code, it's not that big for a compiler).</p>
+
+<p>Rather than include the source here, just read throug the source code in your favourite text editor.</p>
+
+<h3>The Source</h3>
+
+<p>The source is divided into sections, however the line numbers should be good enough to follow the context.</p>
+
+<p><strong>Lines 1 - 21</strong></p>
+
+<p>Source code license.</p>
+
+<p><strong>Lines 22 - 24</strong></p>
+
+<p>Standard C includes, and we define POSIX to tell VC++ that we want ANSI compatiblity when calling functions.</p>
+
+<p><strong>Lines 26 - 42</strong></p>
+
+<p>These are a list of all the C functions we have used. Just for use when porting the C implementation to another system.</p>
+
+<p><strong>Lines 44 - 231</strong></p>
+
+<p>All our defines, including token values for operators, and precalculated hash values for keywords.</p>
+
+<p><strong>Lines 233 - 302</strong></p>
+
+<p>All our variables needed, including the various data structures defined above.</p>
+
+<p><strong>Lines 303 - 403</strong></p>
+
+<p>Our keyword strings.</p>
+
+<p><strong>Lines 405 - 413</strong> - <code>getChar()</code></p>
+
+<p>This function simple reads the next character from the input file. Two variables are used, <code>ch</code> and <code>look_ahead_ch</code>, where <code>ch</code> is the current character, and <code>look_ahead_ch</code> is the next character in the stream. This allows the tokeniser to look at the next character to determine what action to take when tokenising the input.</p>
+
+<p><strong>Lines 415 - 421</strong> - <code>isAlpha()</code></p>
+
+<p>Simply returns true is the character as passed is a..z or _, else returns false. (Used by the tokeniser).</p>
+
+<p><strong>Lines 422 - 432</strong> - <code>abort()</code></p>
+
+<p>One of my favourites, this aborts the compiler with an error as specified in a string. Also prints some helpful information for the user, like which file, it's line number, the token number, and the time the compiler has been running before error.</p>
+
+<p><strong>Lines 433 - 440</strong> - <code>isSpace()</code></p>
+
+<p>Returns true if the character is a space, tab, NULL or CR, else returns false.</p>
+
+<p><strong>Lines 442 - 457</strong> - <code>ElfHash()</code></p>
+
+<p>The classic ELF HASH algorithm, used by the tokeniser to hash the input it sees as a label.</p>
+
+<p><strong>Lines 459 - 467</strong> - <code>insert_token()</code></p>
+
+<p>This is one of the helper functions, used during initialisation of the compiler, where a string (containing a keyword) is plassed to this function, and it inserts the keyword into the hash table.</p>
+
+<p><strong>Lines 469 - 474</strong> - <code>insert_token_stack()</code></p>
+
+<p>This function takes the resultant token (as derived by the tokeniser) and inserts into the token stack (which is later processed by <code>process_token_stack()</code>). It also checks to stack overflow, and aborts if required to.</p>
+
+<p><strong>Lines 476 - 481</strong> - <code>atStackStart()</code></p>
+
+<p>This function is used by <code>process_token_stack()</code> to see if the current position into the stack is at the start, and if not abort processing.</p>
+
+<p><strong>Lines 483 - 487</strong> - <code>atStackEnd()</code></p>
+
+<p>This function is similar to the one above, but checks to see if we are at the end of the token stack, while it is being processed.</p>
+
+<p><strong>Lines 489 - 515</strong> - <code>TokenIsLabelType()</code></p>
+
+<p>This function is used by <code>process_token_stack()</code> to see if the current token, is a label of a particular type. If not, then it aborts processing.</p>
+
+<p><strong>Lines 517 - 523</strong> - <code>IsLabelAllocated()</code></p>
+
+<p>This function is used by <code>process_token_stack()</code>, to see if the current token is a label, and has not type allocated (that is it hasn't being given a type, whether that be a keyword, variable, proc, etc). If it has already been given a type, we abort with an error. This typically occurs when a proc or variable has been redeclared somewhere in the source code.</p>
+
+<p><strong>Lines 524 - 528</strong> - <code>isHash()</code></p>
+
+<p>This function, simply ensures that the current token as processed, is a label, (whether that be a proc, variable or keyword).</p>
+
+<p><strong>Lines 529 - 543</strong> - <code>outputString()</code></p>
+
+<p>This function outputs starting from the current token a UTF16 encoded string to the data temp file. It finishes either when we hit the end of the token stack, or we hit the TOKEN_STRING_END token.</p>
+
+<p><strong>Lines 545 - 551</strong> - <code>outputNumber()</code></p>
+
+<p>This function is similar to the function above, except it outputs the tokens as is (to form a string which represents a number in the code output stream).</p>
+
+<p><strong>Lines 553 - 561</strong> - <code>setState()</code></p>
+
+<p>This function determines the type of the current label, and sets the variable <code>state</code> to represent either a byte, word, dword or nothing (qword).</p>
+
+<p><strong>Lines 563 - 605</strong> - <code>TokenIs()</code></p>
+
+<p>This function checks to see if the current token is of an expected value, and aborts if it is not. This is heavily used during math and bitwise operator code generation.</p>
+
+<p><strong>Lines 606 - 667</strong> - <code>callProc()</code></p>
+
+<p>This function is used by <code>process_token_stack()</code> to output the required code when calling a procedure or function within the source code. It sets up a data frame, and continues to place the parameters as passed in the source code onto the data frame. At this stage, no checking is done, so a user has the ability to either not pass enough parameters or pass too many parameters. It then calls the procedure, and on return tears down the data frame.</p>
+
+<p><strong>Lines 669 - 679</strong> - <code>outputDynamicString()</code></p>
+
+<p>This function handles outputing a string into the data stream, during operations a register is given the location of a string, which is not predefined. eg <code>r0 = &amp;'my_string';</code>. It is used primarily by <code>process_token_stack()</code>.</p>
+
+<p><strong>Lines 681 - 692</strong> - <code>PrintHelp()</code></p>
+
+<p>This function simply displays the help message when needed. eg when the -? or -h commandline options are used.</p>
+
+<p><strong>Lines 694 - 732</strong> - <code>dhtoi()</code></p>
+
+<p>This function is similar to <code>atoi()</code>, however it accepts either a decimal or hexadecimal value as a string and converts it to the correct value.</p>
+
+<p><strong>Lines 734 - 756</strong> - <code>scan_env()</code></p>
+
+<p>This function is used during the initialisation of the compiler, and is used to breakup the <code>-i</code> and <code>%B0_INCLUDE%</code> variables, into separate units, and place them into the PATH data structure.</p>
+
+<p><strong>Lines 756 - 2252</strong> - <code>process_token_stack()</code></p>
+
+<p>The function is the primary token-&gt;code generator, and since B0 is a rather simple langauge, the resulting generator is rather simple itself.</p>
+
+<p>We start by saving the number of tokens to process in the variable <code>i</code>, and then reset the token count (<code>token</code>). Now using a simple <code>switch()</code> statement we branch depending on the value of the first token.</p>
+
+<p>The first case handles the <code>lib</code> keyword, and attempts to open the file as specified in the string. (and if not in the current directory, try appending our search paths to the filename and opening). If you have a file that opened, place the filename and handle into the file stack, set the current file pointer (<code>file_stack_ptr</code>) to the current operating file. (lines 772 - 815).</p>
+
+<p>The next 2 cases, handle the <code>syscall</code> and <code>sysret</code> keywords. Each simply sees that the token is the only only on the stack, and if so, outputs the keyword. (lines 817 - 827).</p>
+
+<p>The next 2 cases, handle the <code>push</code> and <code>pop</code> keywords. They check to ensure that the parameter is a register, and if so generate the correct code. (lines 829 - 843).</p>
+
+<p>The next case handles the <code>asm</code> keyword. This should be the only keyword on the stack, and the line should be terminated with a {. If so, it simply continues to read the source file and outputing it verbatim, until a terminating } is found. It also does some block number fudging to keep things aligned. (lines 845 - 873).</p>
+
+<p>The ELSE case simply terminates processing, as it should never appear on it's own. (lines 875 - 877).</p>
+
+<p>The next case handles the block terminations, and also handles the ELSE statement. If it sees other input other than } and ELSE, then it shifts the token stack to the right (items move down), and passes off the remainder for processing by the other cases. (lines 879 - 909).</p>
+
+<p>The IF case handles the creation of a IF-THEN and IF-THEN-ELSE block. If checks all the parameters and makeup of the statement, and if all is correct, then outputs the correct code. ELSE termination is handled by the BLOCK_END case (item above), and not by the ELSE case. (lines 911 - 965).</p>
+
+<p>The WHILE case statement, like the IF case above handles the WHILE-DO statement. It simple checks for the correct statement makeup, stores the makeup in the IF-WHILE stack, and outputs a location marker into the code. (lines 967 - 1009).</p>
+
+<p>The PROC case handles procedure/function declarations and also any inline parameters declerations (which are m64 by default). As part of the proc declaration, it clears the hash table of ALL labels with the type LOCAL. Once all the old local labels have been removed, it then runs through the parameters declaring those as m64.(lines 1011 - 1068).</p>
+
+<p>The next case handles the variables declarations, and will preinitialise those globals as required. The case is simply split into 2 parts, the first half (lines 1077 - 1178) handles variable declarations for GLOBALS and the 2 half (lines 1179 - 1230) handles variable declarations for LOCALS. (lines 1070 - 1230).</p>
+
+<p>The next two cases, handle the <code>!</code> (NOT) and <code>-</code> (NEG) keywords. They both simply check for a reg as a operand, and if found outputs the required code. (lines 1232 - 1254).</p>
+
+<p>The next 2 cases handle the <code>exit()</code> and <code>return()</code> keywords. Each simply checks for a register or immediate as an operand (if one is supplied), and sets <code>r0</code> appropriately, both either jumping to the the exit routine or returning to the previous procedure. (Remember it's the caller that sets up and tears down the local variable frame). (lines 1257 - 1315).</p>
+
+<p>The final case handles the standard instruction makeup:</p>
+<ul>
+<li>lines 1322 - 1445: Global pointer store operation, both 64bit and non-64bit.  <code>[{reg}|{immediate}] = {reg};</code></li>
+
+<li>lines 1449 - 1546: Variable array store operation. <code>{label}[{reg}|{immediate}] = {reg};</code></li>
+
+<li>lines 1547 - 1601: Single variable store operation. <code>{label} = {reg}|{immediate};</code></li>
+
+<li>lines 1604 - 1693: Pointer assignment. <code>{reg} = &amp;{label}|{string}|{procedure};</code></li>
+
+<li>lines 1695 - 1705: Register load with immediate. <code>{reg} = {immediate};</code></li>
+
+<li>lines 1707 - 1815: Global pointer 64bit load operation. <code>{reg} = [{reg}|{immediate}];</code></li>
+
+<li>lines 1816 - 1917: Register load from variable. <code>{reg} = {label};</code></li>
+
+<li>lines 1918 - 1954: Register load from variable array. <code>{reg} = {label}[{reg}|{immediate}];</code></li>
+
+<li>lines 1955 - 2109: Mathematical / Bitwise operation. <code>{reg} = {reg} {math/bitwise} {reg}|{immediate};</code></li>
+
+<li>lines 2110 - 2115: Register load from register. <code>{reg} = {reg};</code></li>
+
+<li>lines 2116 - 2118: Procedure call with register destination. <code>{reg} = {procedure};</code></li>
+
+<li>lines 2124 - 2239: Global pointer non-64bit load operation. <code>{reg} = [{reg}|{immediate}];</code></li>
+
+<li>lines 2240 - 2245: Procedure call without register destination. <code>{procedure};</code></li>
+</ul>
+<p>The final point, resets the token pointer variable back to zero. (indicating end of processing).</p>
+
+<p><strong>Lines 2254 - 2650</strong> - <code>nextToken()</code></p>
+
+<p>This is the core of the tokeniser, and features the core components in regards to hashing.</p>
+
+<p>The tokeniser starts by ignoring all whitespace, until the first non-whitespace character is reached. It also will skip any comments as well. (lines 2257 - 2269).</p>
+
+<p>On encountering a non-whitespace character, we determine if it's a alpha or number, or a symbol. (line 2270).</p>
+
+<p>If it's a symbol, we check for the ' character, and if it is we start processing the input as a string, until a final ' character is found. During this process the UTF8 input is converted to UTF32 for placement onto the token stack. (lines 2272 - 2387).</p>
+
+<p>Next based on the symbol, we insert the correct token into the token stack. (lines 2388 - 2552). If none of the symbols match, then we check to see if we have a BOM encoded as UTF8, if so skip it and continue. If not (and it's not a EOF), then abort with an error, saying we don't understand the symbol. (lines 2554 - 2567).</p>
+
+<p>If the character is a number, we simple copy the number onto the token stack (ASCII encoded string) (lines 2571 - 2585).</p>
+
+<p>Else we must have a label. We copy the label to another buffer, and then we hash the buffer (using <code>ElfHash()</code>). We test to see if the slot in the hash table is used, if not, we insert the label into the slot available in the hash table and insert the hash into the token stack. If the slot is used, then we first check to if it's the same string! If so, we just continue on (by inserting the hash into the token stack). If the strings don't match, then we perform a linear rehash, check for an empty slot, if not empty compare the labels, and so until we either find an empty slot, or we run out of slots to fill. If we run out, we abort processing with an error stating that the hash table is full. (lines 2587 - 2646).</p>
+
+<p><strong>Lines 2652 - 2673</strong> - <code>end_block_else()</code></p>
+
+<p>This function is to handle the ELSE keyword, so that block termination is done correctly in the event of the ELSE keyword. It checks that we are not back at the global level, and that the current block has been initialised by an IF-THEN statement. If all is fine, then we handle the ELSE statement.</p>
+
+<p><strong>Lines 2675 - 2717</strong> - <code>end_block()</code></p>
+
+<p>This function handles the various cases that may apply when ending a block, that is handling WHILE-DO and IF-THEN statement terminations, and also end of procedures.</p>
+
+<p><strong>Lines 2719 - 2741</strong> - <code>block()</code></p>
+
+<p>This functions handles the setting up of a block, and all handling EOF in a same manner.</p>
+
+<p><strong>Lines 2743 - 2782</strong> - <code>include_standard_output()</code></p>
+
+<p>This function ouputs the standard equates and macros needed by ALL B0 applications to assembly correctly when using FASM.</p>
+
+<p><strong>Lines 2784 - 3152</strong> - <code>main()</code></p>
+
+<p>The start and end of the compiler.</p>
+
+<p><code>main()</code> starts by reading the commandline and sets the appropriate flags accordingly, eg for -i, -DEBUG, -?, -h, -v, -f and also looks for a filename. (lines 2792 - 2835).</p>
+
+<p>If no filename is given, or help is requested, we display the Help for B0, and next if the version is requested, we display the version string. (lines 2836 - 2843).</p>
+
+<p>We now scan for the %B0_INCLUDE% environment variable, and setup our our PATH data structure. (lines 2844 - 2850).</p>
+
+<p>Next we clear the hash table (lines 2865-2867).</p>
+
+<p>Now that the has table has been cleared, we insert all our keywords and reserved labels into the table. (lines 2869 - 2969).</p>
+
+<p>We now attempt to open our named file, and if we can't we abort. The resulting file handle and filename is placed into the File Stack data structure. We also now open the code and data temp files. (lines 2978 - 3000).</p>
+
+<p>We now set some of the parameters to sane values, and while we have a file to read, call <code>block()</code>. (This is the entry point to actual processing). (lines 3001 - 3009).</p>
+
+<p>Once processing the source file, we close it, and reset the file pointers to the code and data temp files. We next get our original filename, remove the extension and provide a new .asm extension, we then create the new output file. (lines 3020 - 3038).</p>
+
+<p>Next based on the source output type (set by the -f commandline switch), we setup the basic headers, out the standard includes (<code>include_standard_output()</code>), and start copying the data and code temp files to the new output file. (lines 3040 - 3142).</p>
+
+<p>Lastly we close all our files, and delete the 2 temp files. (lines 3147 - 3151).</p>
+
+<p><em>THE END.</em></p>
+</div>
+		<div class="noprint">
+			<hr />
+			<p class="align_right">
+				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1" height="31" width="88" /></a>
+			</p>
+		</div>
+</body>
+</html>
+
+

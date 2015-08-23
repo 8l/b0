@@ -1,0 +1,29 @@
+﻿#COMPILER_OPTION ELFO EXPLICITEXPORT;
+//extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+
+macro test_macro(0){
+	{
+		r0 = 1;
+		if(r0){
+			r0 = 0;
+		}
+	};
+}
+
+m64 test = 0;
+
+proc test2() as 'testme'{
+	r0 = 0;
+	test3();
+	}
+
+proc main() as 'main'{
+	if(r4){
+		r0 = 1;
+	}
+	{{{
+		r0 = 1;
+	}}}
+	test_macro();
+	exit(0);
+};

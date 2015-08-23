@@ -1,0 +1,87 @@
+.\" Process this file with
+.\" groff -man -Tascii b0.man
+.\"
+.TH B0 1 "JULY 2007" "" "User Manuals"
+.SH NAME
+b0 \- b0 compiler
+.SH SYNOPSIS
+.B b0 [-f 
+.I format
+.B ] [-i
+.I include_paths
+.B ] [-UTF8] [-UTF16] [-DEBUG] [-v] [-W] [-h|-?|-l] [-o
+.I output_filename 
+.B ] file
+.SH DESCRIPTION
+The B0 package contains a very simple compiler used to compile a language which has high-level
+constructs based on low-level or reduced operations.
+
+The language is a cross between assembler and C, and could be considered a High Level Assembler
+(or HLA), but I personally wouldn't go that far. I prefer to think of it as a hybrid between the two.
+
+The current compiler generates an assembly listing, which can be passed unaltered to 
+.B fasm
+to produce an executable or object file. See 
+.B fasm
+man page for information on assembling files.
+.SH OPTIONS
+.IP "-f format"
+Type of executable or object file to be built by fasm. Valid options are:
+
+.I elf
+(ELF64 execuatble) - Default on Linux Systems,
+
+.I elfo
+(ELF64 Object - to be linked using gcc/ld),
+
+.I pe
+(PE32+ for Windows x64 ) - Default on Windows Systems.
+
+.I dll
+(DLL for Windows x64 ) - to create Windows DLL files.
+
+.IP "-i include_paths"
+Paths to be searched for include/library files. Separate using semi-colon (Windows) or colons (*nix).
+.IP -UTF8
+Encode strings as UTF8 instead of UTF16.
+.IP -UTF16
+Encode strings as UTF16 (DEFAULT).
+.IP -DEBUG
+Enable compiler debugging output.
+.IP -v
+Display Compiler version information.
+.IP -W
+Disable the display of warnings during compilation.
+.IP "-h or -?"
+Display Help
+.IP "-l"
+Display Software License
+.IP "-o output_filename"
+Set putput filename
+.SH "USAGE EXAMPLE"
+> b0 -felf my_prog.b0
+
+> fasm my_prog.asm my_prog
+.SH FILES
+.IP ./doc/b0-man.html
+complete b0 manual in html format.
+.SH ENVIRONMENT
+.IP B0_INCLUDE
+Path to system wide includes and libraries, separate by semi-colon's ';' (Windows) or colon's (*nix). Paths defined using
+.B -i
+will be searched 
+.B before
+those in the environment variable.
+.SH DIAGNOSITICS
+N/A
+.SH BUGS
+No known bugs. You can use
+.B -DEBUG
+to find where the compiler is crashing, and submit the ouput and a copy of the source you are attempting
+to compile for investigation.
+.SH AUTHOR
+Darran Kartaschew (aka Chewy509) <Chewy509@mailcity.com>
+.SH LICENSE
+b0, both language and this implementation are released under the BSD license.
+.SH "SEE ALSO"
+.BR fasm (1)

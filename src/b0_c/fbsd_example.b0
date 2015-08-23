@@ -1,0 +1,148 @@
+// Application "Calling mmap()" for FreeBSD;
+
+#COMPILER_OPTION UTF8 ELFO;
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+#define STDIN  = 00h;
+#define STDOUT = 01h;
+#define STDERR = 02h;
+
+lib '../../include/std_char.b0';
+
+extern mmap();
+
+m64 __mmap = 1;
+
+proc strlen(string) {
+	push r1, r2;
+	r1 = string;
+	r1 = r1 + 2;
+	r0 = r0 ^ r0;		// our count;
+	r2 = r0;			// our char;
+	r2b = [r1+r0];
+	while (r2){
+		r0 = r0 + 1;
+		r2b = [r1+r0];
+	}
+	//r0 = r0 + 1;
+	pop r2, r1;
+	return(r0);
+}
+
+proc sys_write(_handle, _ptr, _size){
+	r0 = 4;						// sys_write
+	r4 = _handle;				// file handle = stdout
+	r5 = _ptr;					// pointer to string to print
+	r5 = r5 + 2;				// Adjust for b0 string type;
+	r3 = _size;					// String size
+	syscall;
+	return(r0);
+};
+
+proc echo_string(handle, string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = string;
+	r3 = strlen(r1);
+	r2 = handle;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc itoah(string, value){
+	push r1, r2, r3, r4, r5, r15;
+	r5 = string;
+	r0 = value;
+
+	r3 = r3 ^ r3;			// r3 = 0 - Number of characters in string
+	r2 = 64;				// Shift amount
+	r4 = 57h;
+	r1 = CHAR_0;
+	[r5+2] = r1b;
+	r5 = r5 + 3;
+
+	while (r2){
+		r2 = r2 - 4;		// Shift amount
+		r1 = r0 >> r2;
+		r1 = r1 && 0fh;		// The next nibble
+		r15 = CHAR_0;
+		asm {
+			cmp r1, 09h
+			cmova r15, r4	// If our value is above 9, set a new increment amount
+		}
+		r1 = r1 + r15;
+		[r5] = r1b;			// Store our value;
+		r5 = r5 + 1;		// Increment our pointer
+		r3 = r3 + 1;		// Increment our count
+	}
+	r1 = CHAR_h;
+	[r5] = r1b;
+	r5 = string;
+	r3 = r3 + 2;
+	[r5+1] = r3b;			// Store count;
+	pop r15, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc echo_hex(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] hex_string;
+	r0 = &hex_string;
+	r1 = integer;
+	itoah(r0, r1);
+	r0 = &hex_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc memInit(){
+	r6 = r7;
+	r7 = r7 - 20h;
+	
+	r4 = 0;				// Don't care where, let the system assign the region
+	r5 = LOCAL_HEAP;	// Let's get our local heap size
+	r3 = 03;			// RW access
+	r2 = 1002h;			// MAP_ANON | MAP_PRIVATE
+	r8 = 0;				// Not a file we are mmap'ing
+	r8d = -1;
+	r9 = 0;				// ignored, since we're not dealing with a file
+	call mmap();
+
+	__mmap = r0;
+	r7 = r6;
+	return(r0);
+}
+
+
+proc memUnmap(loc, size){
+	r4 = loc;
+	r5 = size;
+	r0 = 73;
+	syscall;
+	return(r0);
+};
+
+proc main(){
+	r6 = memInit();
+	r0 = 9;
+	if (r6 == r0){
+		r6 = r7 - 200h;
+		echo_string(STDOUT, 'mmap() call failed\n');
+	} else {
+		echo_string(STDOUT, 'mmap() call suceeded\nmmap = ');
+		r1 = __mmap;
+		echo_hex(STDOUT, r1);
+		echo_string(STDOUT, '\n');
+		r0 = __mmap;
+		memUnmap(r0, LOCAL_HEAP);
+		r6 = r7 - 200h;
+		r1 = 9;
+		if (r0 == r9){
+			echo_string(STDOUT, 'munmap() call failed\n');
+		} else {
+			echo_string(STDOUT, 'munmap() call suceeded\n');
+		}
+	}
+	exit(0);	
+}
+

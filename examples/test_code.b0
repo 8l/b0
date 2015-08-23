@@ -1,0 +1,861 @@
+#COMPILER_OPTION ELF;
+#COMPILER_OPTION UTF8;
+
+#define TYPE_RESERVED = 80000000h;
+#define TYPE_RESERVED2 = 40000000h;
+#define TABLE_SIZE = 64;
+#define PI = 3.142567890;
+#define BIG_NUM = 2.0e99;
+#define SMALL_NUM = 1.0e100;
+
+#define value1 = 2;
+#define value2 = 4;
+#define value3 = 16;
+#define value4 = 1.0;
+
+#define PRODUCTION = 0;
+
+#ifdef PRODUCTION != 1;
+	#undefine PRODUCTION;
+	#define PRODUCTION = 1;
+#endif;
+
+#ifdef PRODUCTION < 1;
+	#undefine PRODUCTION;
+	#define PRODUCTION = 1;
+#endif;
+
+#ifdef PRODUCTION > 1;
+	#undefine PRODUCTION;
+	#define PRODUCTION = 1;
+#endif;
+
+#ifdef PRODUCTION == 1;
+	#undefine PRODUCTION;
+	#define PRODUCTION = 2;
+#endif;
+
+#ifdef PRODUCTION;
+	#define NEGATIVE = -1;
+#endif;
+
+#ifndef i386;
+	#define DEBUG;
+#else;
+	#define DEBUG2;
+#endif;
+
+struc struct_entry {
+	m64 hash;
+	m64 type;
+	m64 size;
+	m64 offset;
+};
+
+struc struc_table {
+	m64[32] entry;
+	struct_entry;
+};
+
+lib 'include/std_char.b0';
+
+
+extern fprintf();
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+
+struc_table[TABLE_SIZE] my_struc_table;
+struct_entry[TABLE_SIZE*2] struc_entries;
+
+m8 dummy1;
+m16 dummy2;
+m32 dummy3;
+m64 dummy4;
+f32 dummy5;
+f64 dummy6;
+f80 dummy7;
+
+m8[2] dummy1_array;
+m16[2] dummy2_array;
+m32[2] dummy3_array;
+m64[2] dummy4_array;
+f32[2] dummy5_array;
+f64[2] dummy6_array;
+f80[2] dummy7_array;
+
+m8 dummy1_equ = 1;
+m16 dummy2_equ = 2;
+m32 dummy3_equ = 4;
+m64 dummy4_equ = 8;
+f32 dummy5_equ = 4.0;
+f64 dummy6_equ = 8.0;
+f80 dummy7_equ = 10.0;
+f80 dummy8_equ = 1.0e10;
+f80 dummy9_equ = 1.1e10;
+f80 dummy10_equ = 1.1e-100;
+
+m8 dummy1_test_pre = NEGATIVE + 1;
+m8 dummy2_test_pre = NEGATIVE - 1;
+m8 dummy3_test_pre = NEGATIVE * 1;
+m8 dummy4_test_pre = NEGATIVE / 1;
+m8 dummy5_test_pre = NEGATIVE + NEGATIVE + 1;
+m8 dummy6_test_pre = NEGATIVE + NEGATIVE - 1;
+m8 dummy7_test_pre = NEGATIVE + NEGATIVE * 1;
+m8 dummy8_test_pre = NEGATIVE + NEGATIVE / 1;
+m64 dummy9_test_pre = NEGATIVE + TYPE_RESERVED2 + 1;
+m64 dummy10_test_pre = NEGATIVE + TYPE_RESERVED2 - 1;
+m64 dummy11_test_pre = NEGATIVE + TYPE_RESERVED2 * 1;
+m64 dummy12_test_pre = NEGATIVE + TYPE_RESERVED2 / 1;
+
+m8 mystring = 'This is a string\n\r\t\0\\\'';
+m16 mystring2 = 'This is a string\n\r\t\0\\\'';
+m32 mystring3 = 'This is a string\n\r\t\0\\\'';
+m64 mystring4 = 'This is a string\n\r\t\0\\\'';
+
+v4i vect4i;
+v4f vect4f;
+v2f vect2f;
+
+proc test_local_var(test1, test2){
+	m8 dummy1_local;
+	m16 dummy2_local;
+	m32 dummy3_local;
+	m64 dummy4_local;
+	f32 dummy5_local;
+	f64 dummy6_local;
+	f80 dummy7_local;
+	
+	m8[2] dummy1_array_local;
+	m16[2] dummy2_array_local;
+	m32[2] dummy3_array_local;
+	m64[2] dummy4_array_local;
+	f32[2] dummy5_array_local;
+	f64[2] dummy6_array_local;
+	f80[2] dummy7_array_local;
+
+	v4i[10] __v4i;
+	v4f[12] __v4f;
+	v2f[16] __v2f;
+
+	struc_table[TABLE_SIZE] my_struc_table2;
+	struct_entry[TABLE_SIZE*2] struc_entries2;
+
+	
+	r0 = dummy1_local;
+	r0 = dummy2_local;
+	r0 = dummy3_local;
+	r0 = dummy4_local;
+	dummy1_local = r0;
+	dummy2_local = r0;
+	dummy3_local = r0;
+	dummy4_local = r0;
+	dummy1_local = 1;
+	dummy2_local = 2;
+	dummy3_local = 4;
+	dummy4_local = 8;
+	
+	r0 = dummy1_array_local[2];
+	r0 = dummy2_array_local[2];
+	r0 = dummy3_array_local[2];
+	r0 = dummy4_array_local[2];
+	fp0 = dummy5_array_local[2];
+	fp0 = dummy6_array_local[2];
+	fp0 = dummy7_array_local[2];
+	fp0 = dummy3_array_local[2];
+	fp0 = dummy4_array_local[2];
+	dummy1_array_local[2] = r0;
+	dummy2_array_local[2] = r0;
+	dummy3_array_local[2] = r0;
+	dummy4_array_local[2] = r0;
+	dummy5_array_local[2] = fp0;
+	dummy6_array_local[2] = fp0;
+	dummy7_array_local[2] = fp0;
+	dummy4_array_local[2] = fp0;
+	dummy5_array_local[2] = fp0;
+
+	r0 = dummy1_array_local[r2];
+	r0 = dummy2_array_local[r2];
+	r0 = dummy3_array_local[r2];
+	r0 = dummy4_array_local[r2];
+	fp0 = dummy5_array_local[r2];
+	fp0 = dummy6_array_local[r2];
+	fp0 = dummy7_array_local[r2];
+	fp0 = dummy3_array_local[r2];
+	fp0 = dummy4_array_local[r2];
+	dummy1_array_local[r2] = r0;
+	dummy2_array_local[r2] = r0;
+	dummy3_array_local[r2] = r0;
+	dummy4_array_local[r2] = r0;
+	dummy5_array_local[r2] = fp0;
+	dummy6_array_local[r2] = fp0;
+	dummy7_array_local[r2] = fp0;
+	dummy4_array_local[r2] = fp0;
+	dummy5_array_local[r2] = fp0;
+
+	r0 = dummy1_array_local;
+	r0 = dummy2_array_local;
+	r0 = dummy3_array_local;
+	r0 = dummy4_array_local;
+	fp0 = dummy5_array_local;
+	fp0 = dummy6_array_local;
+	fp0 = dummy7_array_local;
+	fp0 = dummy3_array_local;
+	fp0 = dummy4_array_local;
+	dummy1_array_local = r0;
+	dummy2_array_local = r0;
+	dummy3_array_local = r0;
+	dummy4_array_local = r0;
+	dummy5_array_local = fp0;
+	dummy6_array_local = fp0;
+	dummy7_array_local = fp0;
+	dummy4_array_local = fp0;
+	dummy5_array_local = fp0;
+	
+	my_struc_table2 = r0;
+	my_struc_table2[1] = r0;
+	my_struc_table2[r0] = r0;
+	my_struc_table2[1].entry = r0;
+	my_struc_table2[r0].entry = r0;
+	my_struc_table2[1].hash = r0;
+	my_struc_table2[r0].hash = r0;
+	r0 = my_struc_table2;
+	r0 = my_struc_table2[1];
+	r0 = my_struc_table2[r0];
+	r0 = my_struc_table2[1].entry;
+	r0 = my_struc_table2[r0].entry;
+	r0 = my_struc_table2[1].hash;
+	r0 = my_struc_table2[r0].hash;
+	my_struc_table2 = 0;
+	my_struc_table2[1] = 1;
+	my_struc_table2[r0] = 2;
+	my_struc_table2[1].entry = 3;
+	my_struc_table2[r0].entry = 4;
+	my_struc_table2[1].hash = 5;
+	my_struc_table2[r0].hash = 6;
+	struc_entries2 = r0;
+	struc_entries2[1] = r0;
+	struc_entries2[r0] = r0;
+	struc_entries2[1].hash = r0;
+	struc_entries2[r0].hash = r0;
+	r0 = struc_entries2;
+	r0 = struc_entries2[1];
+	r0 = struc_entries2[r0];
+	r0 = struc_entries2[1].hash;
+	r0 = struc_entries2[r0].hash;
+	struc_entries2 = 0;
+	struc_entries2[1] = 1;
+	struc_entries2[r0] = 2;
+	struc_entries2[1].hash = 5;
+	struc_entries2[r0].hash = 6;
+	r0 = &dummy1_local;
+	r0 = &my_struc_table2;
+	r0 = &my_struc_table2[1];
+	r0 = &my_struc_table2[r0];
+	r0 = &my_struc_table2[1].entry;
+	r0 = &my_struc_table2[r0].entry;
+	r0 = &my_struc_table2[1].hash;
+	r0 = &my_struc_table2[r0].hash;
+	r0 = &struc_entries2;
+	r0 = &struc_entries2[1];
+	r0 = &struc_entries2[r0];
+	r0 = &struc_entries2[1].hash;
+	r0 = &struc_entries2[r0].hash;
+
+}
+
+proc main(){
+	r0 = 01;
+	r0 = 01h;
+	r0 = 0ah;
+	r0 = -1;
+	r0 = r0;
+	r0 = r0 + r0;
+	r0 = r0 - r0;
+	r0 = r0 * r0;
+	r0 = r0 / r1;
+	r0 = r0 % r1;
+	r0 = r0 ~* r0;
+	r0 = r0 ~/ r1;
+	r0 = r0 ~% r1;
+	r0 = r0 << 1;
+	r0 = r0 << r2b;
+	r0 = r0 >> 1;
+	r0 = r0 >> r2b;
+	r0 = r0 <<< 1;
+	r0 = r0 <<< r2b;
+	r0 = r0 >>> 1;
+	r0 = r0 >>> r2b;
+	r0 = r0 ^ r0;
+	r0 = r0 && r0;
+	r0 = r0 | r0;
+	-r0;
+	!r0;
+	r0 = r1;
+	r0 = r1 + r0;
+	r0 = r1 - r0;
+	r0 = r0 * r1;
+	r0 = r0 / r1;
+	r0 = r0 % r1;
+	r0 = r0 ~* r1;
+	r0 = r0 ~/ r1;
+	r0 = r0 ~% r1;
+	r0 = r1 << 1;
+	r0 = r1 << r2b;
+	r0 = r1 >> 1;
+	r0 = r1 >> r2b;
+	r0 = r1 <<< 1;
+	r0 = r1 <<< r2b;
+	r0 = r1 >>> 1;
+	r0 = r1 >>> r2b;
+	r0 = r1 ^ r0;
+	r0 = r1 && r0;
+	r0 = r1 | r0;
+	-r1;
+	!r1;
+	r0 = r1;
+	r0 = r1 + 2;
+	r0 = r1 - 3;
+	r0 = r1 ^ 4;
+	r0 = r1 && 5;
+	r0 = r1 | 6;
+	r0 = r1 + -2;
+	r0 = r1 - -3;
+	
+	fp0 = fp0 * fp3; 
+	fp0 = fp0 / fp3; 
+	fp0 = fp0 % fp1;
+	fp0 = fp0 ~* fp3; 
+	fp0 = fp0 ~/ fp3; 
+	fp0 = fp0 + fp3; 
+	fp0 = fp0 - fp3; 
+	fp0 = fp3 * fp0; 
+	fp3 = fp0 / fp3; 
+	fp0 = fp3 ~* fp0; 
+	fp3 = fp0 ~/ fp3; 
+	fp3 = fp3 - fp0; 
+	fp3 = fp3 + fp0; 
+	fp0 = fp0 * fp0; 
+	fp0 = fp0;
+	fp0 = fp3;
+	fp3 = fp0;
+	fp0 = 1.0;
+	fp0 = 2.0;
+	fp0 = 3.142e100;
+	fp0 = 3.142e-100;
+	fp0 = PI;
+	
+	r0 = value1 << value2;
+	r0 = value3 >> value1;
+	r0 = value1 + value2;
+	r0 = value2 - value1;
+	r0 = value1 * value2;
+	r0 = value3 / value2;
+	fp0 = value4 + value1;
+	
+	r0 = dummy1;
+	r0 = dummy2;
+	r0 = dummy3;
+	r0 = dummy4;
+	fp0 = dummy5;
+	fp0 = dummy6;
+	fp0 = dummy7;
+	fp0 = dummy3;
+	fp0 = dummy4;
+	dummy1 = r0;
+	dummy2 = r0;
+	dummy3 = r0;
+	dummy4 = r0;
+	dummy5 = fp0;
+	dummy6 = fp0;
+	dummy7 = fp0;
+	dummy4 = fp0;
+	dummy5 = fp0;
+	dummy1 = 1;
+	dummy2 = 2;
+	dummy3 = 4;
+	dummy4 = 8;
+	r0 = dummy1_array[2];
+	r0 = dummy2_array[2];
+	r0 = dummy3_array[2];
+	r0 = dummy4_array[2];
+	fp0 = dummy5_array[2];
+	fp0 = dummy6_array[2];
+	fp0 = dummy7_array[2];
+	fp0 = dummy3_array[2];
+	fp0 = dummy4_array[2];
+	dummy1_array[2] = r0;
+	dummy2_array[2] = r0;
+	dummy3_array[2] = r0;
+	dummy4_array[2] = r0;
+	dummy5_array[2] = fp0;
+	dummy6_array[2] = fp0;
+	dummy7_array[2] = fp0;
+	dummy4_array[2] = fp0;
+	dummy5_array[2] = fp0;
+	r0 = dummy1_array[r2];
+	r0 = dummy2_array[r2];
+	r0 = dummy3_array[r2];
+	r0 = dummy4_array[r2];
+	fp0 = dummy5_array[r2];
+	fp0 = dummy6_array[r2];
+	fp0 = dummy7_array[r2];
+	fp0 = dummy3_array[r2];
+	fp0 = dummy4_array[r2];
+	dummy1_array[r2] = r0;
+	dummy2_array[r2] = r0;
+	dummy3_array[r2] = r0;
+	dummy4_array[r2] = r0;
+	dummy5_array[r2] = fp0;
+	dummy6_array[r2] = fp0;
+	dummy7_array[r2] = fp0;
+	dummy4_array[r2] = fp0;
+	dummy5_array[r2] = fp0;
+	r0 = dummy1_array;
+	r0 = dummy2_array;
+	r0 = dummy3_array;
+	r0 = dummy4_array;
+	fp0 = dummy5_array;
+	fp0 = dummy6_array;
+	fp0 = dummy7_array;
+	fp0 = dummy3_array;
+	fp0 = dummy4_array;
+	dummy1_array = r0;
+	dummy2_array = r0;
+	dummy3_array = r0;
+	dummy4_array = r0;
+	dummy5_array = fp0;
+	dummy6_array = fp0;
+	dummy7_array = fp0;
+	dummy4_array = fp0;
+	dummy5_array = fp0;
+	my_struc_table = r0;
+	my_struc_table[1] = r0;
+	my_struc_table[r0] = r0;
+	my_struc_table[1].entry = r0;
+	my_struc_table[r0].entry = r0;
+	my_struc_table[1].hash = r0;
+	my_struc_table[r0].hash = r0;
+	r0 = my_struc_table;
+	r0 = my_struc_table[1];
+	r0 = my_struc_table[r0];
+	r0 = my_struc_table[1].entry;
+	r0 = my_struc_table[r0].entry;
+	r0 = my_struc_table[1].hash;
+	r0 = my_struc_table[r0].hash;
+	my_struc_table = 0;
+	my_struc_table[1] = 1;
+	my_struc_table[r0] = 2;
+	my_struc_table[1].entry = 3;
+	my_struc_table[r0].entry = 4;
+	my_struc_table[1].hash = 5;
+	my_struc_table[r0].hash = 6;
+	struc_entries = r0;
+	struc_entries[1] = r0;
+	struc_entries[r0] = r0;
+	struc_entries[1].hash = r0;
+	struc_entries[r0].hash = r0;
+	r0 = struc_entries;
+	r0 = struc_entries[1];
+	r0 = struc_entries[r0];
+	r0 = struc_entries[1].hash;
+	r0 = struc_entries[r0].hash;
+	struc_entries = 0;
+	struc_entries[1] = 1;
+	struc_entries[r0] = 2;
+	struc_entries[1].hash = 5;
+	struc_entries[r0].hash = 6;
+	r0 = [r0];
+	r0 = [r0+r0];
+	r0 = [r0+r0*1];
+	r0 = [r0+r0*2+32];
+	r0 = [r0+32];
+	r0 = [32];
+	r0 = [r0];
+	r0 = [r0*2];
+	r0 = [r0+r0*4];
+	r0 = [r0+r0*2-32];
+	r0 = [r0-32];
+	r0 = [32];
+	[r0] = r0;
+	[r0+r0] = r0;
+	[r0+r0*1] = r0;
+	[r0+r0*2+32] = r0;
+	[r0+32] = r0;
+	[32] = r0;
+	[r0] = r0;
+	[r0*2] = r0;
+	[r0+r0*4] = r0;
+	[r0+r0*2-32] = r0;
+	[r0-32] = r0;
+	[32] = r0;
+	r0w = [r0];
+	r0w = [r0+r0];
+	r0w = [r0+r0*1];
+	r0w = [r0+r0*2+32];
+	r0w = [r0*4+32];
+	r0w = [r0+32];
+	r0w = [32];
+	r0w = [r0];
+	r0w = [r0*2];
+	r0w = [r0*4-32];
+	r0w = [r0+r0*1];
+	r0w = [r0+r0*2-32];
+	r0w = [r0-32];
+	r0w = [32];
+	[r0] = r0w;
+	[r0+r0] = r0w;
+	[r0+r0*1] = r0w;
+	[r0+r0*2+32] = r0w;
+	[r0+32] = r0w;
+	[32] = r0w;
+	[r0] = r0w;
+	[r0*2] = r0w;
+	[r0+r0*1] = r0w;
+	[r0+r0*2-32] = r0w;
+	[r0-32] = r0w;
+	[32] = r0w;	
+	fp0 = [r0];
+	[r0] = fp0;
+	[r0] = 1;
+	[r0] = -1;
+	r0 = &'This is a string\n\r\t\0\\\'';
+	r0 = &dummy1;
+	r0 = &my_struc_table;
+	r0 = &my_struc_table[1];
+	r0 = &my_struc_table[r0];
+	r0 = &my_struc_table[1].entry;
+	r0 = &my_struc_table[r0].entry;
+	r0 = &my_struc_table[1].hash;
+	r0 = &my_struc_table[r0].hash;
+	r0 = &struc_entries;
+	r0 = &struc_entries[1];
+	r0 = &struc_entries[r0];
+	r0 = &struc_entries[1].hash;
+	r0 = &struc_entries[r0].hash;
+	r0 = &[r0];
+	r0 = &vect4i;
+	r0 = &vect4f;
+	r0 = &vect2f;
+	r0 = &__v4i;
+	r0 = &__v4f[r1];
+	r0 = &__v2f[12];
+	r1 = test_local_var();
+	r1 = test_local_var(r0);
+	r1 = test_local_var(1);
+	r1 = test_local_var('string');
+	r1 = test_local_var(r0, r0);
+	r1 = test_local_var(1, r0);
+	r1 = test_local_var('string', r0);
+	r1 = &test_local_var();
+	test_local_var();
+	test_local_var(r0);
+	test_local_var(1);
+	test_local_var('string');
+	test_local_var(r0, r0);
+	test_local_var(1, r0);
+	test_local_var('string', r0);
+	#COMPILER_OPTION DISABLESTACKFRAME;
+	test_local_var();
+	test_local_var(r0);
+	test_local_var(r0, r0);
+	#COMPILER_OPTION ENABLESTACKFRAME;	
+	if(r0){
+		r0 = r1;
+	}
+	if(r0 == r1){
+		r0 = r1;
+	}
+	if(r0 != r1){
+		r0 = r1;
+	}
+	if(r0 < r1){
+		r0 = r1;
+	}
+	if(r0 > r1){
+		r0 = r1;
+	}
+	if(r0 <= r1){
+		r0 = r1;
+	}
+	if(r0 >= r1){
+		r0 = r1;
+	}
+	if(r0 ~< r1){
+		r0 = r1;
+	}
+	if(r0 ~> r1){
+		r0 = r1;
+	}
+	if(r0 ~<= r1){
+		r0 = r1;
+	}
+	if(r0 ~>= r1){
+		r0 = r1;
+	}
+	while(r0){
+		r0 = r1;
+	}
+	while(r0 == r1){
+		r0 = r1;
+	}
+	while(r0 != r1){
+		r0 = r1;
+	}
+	while(r0 < r1){
+		r0 = r1;
+	}
+	while(r0 > r1){
+		r0 = r1;
+	}
+	while(r0 <= r1){
+		r0 = r1;
+	}
+	while(r0 >= r1){
+		r0 = r1;
+	}
+	while(r0 ~< r1){
+		r0 = r1;
+	}
+	while(r0 ~> r1){
+		r0 = r1;
+	}
+	while(r0 ~<= r1){
+		r0 = r1;
+	}
+	while(r0 ~>= r1){
+		r0 = r1;
+	}
+	if(r0){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 == r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 != r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 < r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 > r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 <= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 >= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 ~< r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 ~> r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 ~<= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0 ~>= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	}
+	if(r0){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}	
+	if(r0 == r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 != r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 < r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 > r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 <= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 >= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 ~< r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 ~> r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 ~<= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	if(r0 ~>= r1){
+		r0 = r1;
+	} else {
+		r1 = r0;
+	} else {
+		r2 = r1;
+	}
+	
+	if(fp0){
+		fp0 = fp1;
+	}
+	if(fp0 == fp1){
+		fp0 = fp1;
+	}
+	if(fp0 != fp1){
+		fp0 = fp1;
+	}
+	if(fp0 < fp1){
+		fp0 = fp1;
+	}
+	if(fp0 > fp1){
+		fp0 = fp1;
+	}
+	if(fp0 <= fp1){
+		fp0 = fp1;
+	}
+	if(fp0 >= fp1){
+		fp0 = fp1;
+	}
+	if(fp0 ~< fp1){
+		fp0 = fp1;
+	}
+	if(fp0 ~> fp1){
+		fp0 = fp1;
+	}
+	if(fp0 ~<= fp1){
+		fp0 = fp1;
+	}
+	if(fp0 ~>= fp1){
+		fp0 = fp1;
+	}
+	while(fp0){
+		fp0 = fp1;
+	}
+	while(fp0 == fp1){
+		fp0 = fp1;
+	}
+	while(fp0 != fp1){
+		fp0 = fp1;
+	}
+	while(fp0 < fp1){
+		fp0 = fp1;
+	}
+	while(fp0 > fp1){
+		fp0 = fp1;
+	}
+	while(fp0 <= fp1){
+		fp0 = fp1;
+	}
+	while(fp0 >= fp1){
+		fp0 = fp1;
+	}
+	while(fp0 ~< fp1){
+		fp0 = fp1;
+	}
+	while(fp0 ~> fp1){
+		fp0 = fp1;
+	}
+	while(fp0 ~<= fp1){
+		fp0 = fp1;
+	}
+	while(fp0 ~>= fp1){
+		fp0 = fp1;
+	}
+	
+	
+	push r1;
+	push r1, r2;
+	pop r2, r1;
+	pop r1;
+	syscall;
+	sysret;
+	in(r3, r0b);
+	out(r3, r0b);
+	in(r3, r0w);
+	out(r3, r0w);
+	in(r3, r0d);
+	out(r3, r0d);
+	fincstp;
+	fdecstp;
+	call r0;
+	call [r0];
+	//call fprintf();
+	ret;
+	asm {
+		.here:
+		test r0, r0;
+		je .here
+	};
+	exit();
+	exit(-1);
+	exit(4);
+	exit(r0);
+	return();
+	return(-2);
+	return(3);
+	return(r0);
+}
+
+

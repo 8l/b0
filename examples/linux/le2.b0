@@ -1,0 +1,26 @@
+// Application "Hello World" for Linux;
+
+#define LOCAL_HEAP = 1000000h;			// Allocate 10MB for local thread heap;
+
+lib 'stdlib_linux.b0';					// Linux sys_calls
+
+lib 'stdlib_unicode.b0';				// Unicode conversion routines
+
+m16 string = 'Global String\n';
+m16 string2 = 04h,04h,62h,30h,2122h,0ah,0;
+m16 string3 = 08h,08h,0aeh,021h,0263ah,020e0h,02297h,020ach,03a9h,0ah,0;
+
+proc main(){
+	r6 = memInit();							// Setup local variable buffer!
+	echo(&'Hello World from B0\n');
+	echo(&'UTF Test: ');
+	r0 = &string2;
+	echo(r0);
+	echo(&'UTF Symbols: ');
+	r0 = &string3;
+	echo(r0);
+	r0 = &string;
+	echo(r0);
+	exit(0);
+}
+

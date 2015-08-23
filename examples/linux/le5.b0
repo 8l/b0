@@ -1,0 +1,88 @@
+// Application "Hello World" for Linux;
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+lib 'stdlib_unicode.b0';				// Unicode conversion routines
+lib 'stdlib_linux.b0';
+
+extern printf();
+extern getpid();
+
+m16 demo_string = 'This string has just been printed by glibc/printf()\n';
+m16 demo_string2 = 'getpid() returned the current process ID as %d or 0x%xh.\n';
+m16 demo_string3 = 'argc = %ld and argv = 0x%lxh (pointer to first arg)\n';
+
+m8[256] utf8_string;		// UTF8 String for output
+m64 utf8_length;			// UTF8 String length
+m8[16] string_size;		// UTF8 String size
+
+m64 pid = 0;
+
+proc main(argc, argv){
+	r6 = memInit();				// Setup local variable buffer!
+	argc = r4;					// On application initialisation argc = edi
+	argv = r5;					// and argv = rsi
+	
+	utf8_string[0] = 0ffh;		// Buffer length
+	utf8_string[1] = 0h;       // Used length
+	r0 = &demo_string;		   // Set r0 = pointer to our string to print
+	r1 = &utf8_string;			// Set r1 = location of UTF8 form
+	r3 = u16_2_u8_str(r0, r1);	// Convert and store size in r3;
+	utf8_length = r3;			   // Store our string size.
+
+	push r6;
+	r15 = r6;
+	r6 = r7;
+	r0 = &utf8_string;
+	r4 = r0 + 2;
+	r0 = 0;
+	call printf();
+	pop r6;
+	
+	utf8_string[0] = 0ffh;		// Buffer length
+	utf8_string[1] = 0h;       // Used length
+	r0 = &demo_string2;		   // Set r0 = pointer to our string to print
+	r1 = &utf8_string;			// Set r1 = location of UTF8 form
+	r3 = u16_2_u8_str(r0, r1);	// Convert and store size in r3;
+	utf8_length = r3;			   // Store our string size.
+	
+	push r6;
+	r6 = r7;
+	call getpid();
+	pid = r0;
+	pop r6;
+	
+	push r6;
+	r15 = r6;
+	r6 = r7;
+	r0 = &utf8_string;
+	r4 = r0 + 2;
+	r5 = pid;
+	r3 = pid;
+	r0 = 0;
+	call printf();
+	pop r6;
+	
+	utf8_string[0] = 0ffh;		// Buffer length
+	utf8_string[1] = 0h;       // Used length
+	r0 = &demo_string3;		   // Set r0 = pointer to our string to print
+	r1 = &utf8_string;			// Set r1 = location of UTF8 form
+	r3 = u16_2_u8_str(r0, r1);	// Convert and store size in r3;
+	utf8_length = r3;			   // Store our string size.
+
+	// Cause we are fudging with r6 below, we lose local variables, and hence need to load them here!
+	r3 = argv;
+	r5 = argc;
+	
+	push r6;
+	r15 = r6;
+	r6 = r7;		// Cause we are fudging with r6, we lose local variables!
+	r0 = &utf8_string;
+	r4 = r0 + 2;
+	r0 = 0;
+	call printf();
+	pop r6;
+	
+	exit(0);
+}
+

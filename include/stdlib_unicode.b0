@@ -1,0 +1,788 @@
+// Unicode conversion routines.
+
+// Copyright 2005 Darran Kartaschew
+// Released under a BSD Licence.
+
+//*****************************
+//
+// u8_2_u16_char()
+//
+// takes a UTF8 encoded char and returns UTF16 encoded char.
+//
+// Input format: Each byte of m64 passed is part of the char.
+//  eg. bits 0-7 = 1st byte, bits 8-15 = 2nd byte, etc. Max 8 bytes passed.
+// Output format: bits 0-15: 1st word, bits 16-32: 2nd word.
+//
+//*****************************
+proc u8_2_u16_char(char){
+	push r1, r15;
+	r1 = char;
+	r0 = r1 && 0ffh;  // Mask off all except lower 8 bits.
+	r15 = 07fh;
+	if (r0 > r15){
+		// Multibyte sequence byte sequence
+		r0 = u8_2_u32_char(r1);
+		r0 = u32_2_u16_char(r0);
+	} else {
+		r0 = r0 && 7fh;  // Single byte sequence
+	}
+	pop r15, r1;
+	return(r0);
+};
+
+//*****************************
+//
+// u8_2_u32_char()
+//
+// takes a UTF8 encoded char and returns UTF32 encoded char.
+//
+// Input format: Each byte of m64 passed is part of the char.
+//  eg. bits 0-7 = 1st byte, bits 8-15 = 2nd byte, etc. Max 8 bytes passed.
+// Output format: bits 0-31: 1st word.
+//
+//*****************************
+
+proc u8_2_u32_char(char){
+	push r1, r15;
+	r0 = char;
+	r1 = r0;
+	r0 = r0 && 0ffh;  // Mask off all except lower 8 bits.
+	r15 = 07fh;
+	if (r0 > r15){
+		// Multibyte sequence byte sequence
+		r1 = r1 >> 08h;		// Shift right r1. r0 = first byte;
+		r15 = 0dfh;
+		if (r0 > r15){
+			// 3 or more bytes
+			r15 = 0f0h;
+			if (r0 > r15){
+				// 4 byte sequence
+				r15 = r1;
+				r0 = r0 && 0fh;			// Mask off the top 4 bits
+				r0 = r0 << 06h;			// Shift left
+				r1 = r1 && 03fh;		// Mask off the top 2 bits
+				r0 = r0 | r1;			// join together.
+				r15 = r15 >> 08h;		// Get the 3rd byte
+				r1 = r15;
+				r15 = r15 && 03fh;		// Mask off the top 2 bits
+				r0 = r0 << 06h;			//
+				r0 = r0 | r15;			// Join together
+				r1 = r1 >> 08h;			// Get the 4th byte
+				r1 = r1 && 03fh;		// Mask off the top 2 bits
+				r0 = r0 | r1;			// join together.
+			} else {
+				// 3 byte sequence
+				r15 = r1;
+				r0 = r0 && 0fh;			// Mask off the top 4 bits
+				r0 = r0 << 06h;			// Shift left
+				r1 = r1 && 03fh;		// Mask off the top 2 bits
+				r0 = r0 | r1;			// join together.
+				r15 = r15 >> 08h;		// Get the 3rd byte
+				r15 = r15 && 03fh;		// Mask off the top 2 bits
+				r0 = r0 << 06h;			//
+				r0 = r0 | r15;			// Join together
+			}
+		} else {
+			// 2 byte sequence
+			r0 = r0 && 01fh;			// Mask off the top 3 bits
+			r0 = r0 << 06h;				// Shift left
+			r1 = r1 && 03fh;			// Mask off the top 2 bits
+			r0 = r0 | r1;				// join together.
+		}
+	} else {
+		r0 = r0 && 7fh;  // Single byte sequence
+	}
+	pop r15, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u16_2_u8_char()
+//
+// takes a UTF16 encoded char and returns UTF8 encoded char.
+//
+// Formats same as those above.
+//
+//*****************************
+proc u16_2_u8_char(char){
+	r0 = char;
+	r0 = u16_2_u32_char(r0);
+	r0 = u32_2_u8_char(r0);
+	return(r0);
+}
+
+//*****************************
+//
+// u16_2_u32_char()
+//
+// takes a UTF16 encoded char and returns UTF32 encoded char.
+//
+// Formats same as those above.
+//
+//*****************************
+proc u16_2_u32_char(char){
+	push r1, r15;
+	r0 = char;
+	r15 = 0d800h;
+	r1 = r0 >> 16;			// Shift right 16 places. (r1 = high word)
+	r0 = r0 && 0ffffh;		// Mask off all bits except for lower 16bits
+	if(r0 >= r15){
+		r15 = 0dfffh;
+		if (r0 <= r15) {		// We MUST have a surrogate pair
+			// Multiword sequence
+			// r0 = our first word
+			// r1 = our second word.
+			r1 = r1 && 03ffh;	// r1 now holds bits 0 - 9
+			r15 = r0 && 3fh;	// r15 now holds bits 10 - 15
+			r15 = r15 << 10;
+			r0 = r0 >> 06h;		// Get bits 16 - 20
+			r0 = r0 && 0fh;
+			r0 = r0 + 1;		// r0 = bits 16 - 20.
+			r0 = r0 << 16;		// set bits
+			r0 = r0 | r15;		// join r15 to r0 (bits 10 - 15)
+			r0 = r0 | r1;		// join r1 to r0 (bits 0 - 9)
+		}
+	}
+	pop r15, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u32_2_u8_char()
+//
+// takes a UTF32 encoded char and returns UTF8 encoded char.
+//
+// Formats same as those above.
+//
+//*****************************
+proc u32_2_u8_char(char){
+	push r15, r1, r2;
+	r0 = char;
+	r15 = 10ffffh;
+	if (r0 > r15){
+		return(0);		// Invalid UTF32 encoding.
+	}
+	r15 = 0d800h;
+	if (r0 >= r15){
+		r15 = 0dfffh;
+		if (r0 <= r15){
+			r0 = r0 ^ r0; // ERROR: Invalid UTF32 value. r0 = 0;
+		}
+	}
+	r15 = 07fh;
+	if (r0 > r15){
+		// Multicharacter encoded needed.
+		r15 = 07ffh;
+		if (r0 <= r15){
+			// 2 byte encoding
+			r1 = r0 >> 6;		// First byte
+			r0 = r0 && 03fh;	// Second byte
+			r1 = r1 | 0c0h;		// First byte OR 11000000b
+			r0 = r0 | 80h;		// Second byte OR 10000000b
+			r0 = r0 << 8;
+			r0 = r0 | r1;		// Join r0 and r1 together.
+		} else {
+			r15 = 0ffffh;
+			if (r0 <= r15){
+				// 3 byte encoding
+				r1 = r0 >> 6;		// Second byte;
+				r15 = r0 >> 12;		// First byte;
+				r0 = r0 && 3fh;		// Third byte;
+				r0 = r0 | 80h;		// Set MSB
+				r1 = r1 | 80h; 		// Set MSB
+				r15 = r15 | 0e0h;	// Set 3 byte sequence marker
+				r1 = r1 && 0ffh;	// Mask off all other bits
+				r15 = r15 && 0ffh;	// Mask off all other bits
+				r0 = r0 << 16;		// Move 3rd byte into position
+				r1 = r1 << 8;		// Move 2nd byte into position
+				r0 = r0 | r1;		// Join r1 to r0
+				r0 = r0 | r15;		// Join r15 to r0
+			} else {
+				// 4 byte encoding
+				r1 = r0 >> 6;		// Third byte;
+				r15 = r0 >> 12;		// Second byte;
+				r2 = r0 >> 18;		// First byte
+				r0 = r0 && 3fh;		// Fourth byte;
+				r0 = r0 | 80h;		// Set MSB
+				r1 = r1 | 80h; 		// Set MSB
+				r15 = r15 | 80h;	// Set MSB
+				r2 = r2 | 0f0h;		// Set 4 byte sequence marker
+				r1 = r1 && 0ffh;	// Mask off all other bits
+				r15 = r15 && 0ffh;	// Mask off all other bits
+				r2 = r2 && 0ffh;	// Mask off all other bits
+				r0 = r0 << 24;		// Move 4th byte into position
+				r1 = r1 << 16;		// Move 3rd byte into position
+				r15 = r15 << 8;		// Move 2nd byte into position
+				r0 = r0 | r1;		// Join r1 to r0
+				r0 = r0 | r15;		// Join r15 to r0
+				r0 = r0 | r2;		// Join r2 to r0
+			}
+		}
+	}
+	pop r2, r1, r15;
+	return(r0);
+}
+
+
+//*****************************
+//
+// u32_2_u16_char()
+//
+// takes a UTF32 encoded char and returns UTF16 encoded char.
+//
+// Formats same as those above.
+//
+//*****************************
+proc u32_2_u16_char(char){
+	push r1, r15;
+	r0 = char;
+	r15 = 10000h;
+	if(r0 >= r15){
+		// Need to split into surrogate pair.
+		r15 = 10ffffh;
+		if (r0 <= r15){
+			r1 = r0 && 03ffh;	// lower 10 bits into r1;
+			r1 = r1 | 0dc00h;	
+			r15 = r1 << 16;		// 2nd word complete
+			r0 = r0 >> 10;		// Lets move out those bits we have already handled.
+			r1 = r0 >> 6;		// r1 = bits 16 - 20.
+			r0 = r0 && 3fh;		// r0 = bits 10 - 15.
+			r1 = r1 && 1fh;		// Mask off all other bits.
+			r1 = r1 - 1;		// sub 1
+			r1 = r1 << 6;
+			r0 = r0 | r1;		// join r1 to r0;
+			r0 = r0 | 0d800h;	// set the surrogate definition bits.
+			r0 = r0 | r15;		// join r15 to r0;
+		} else {
+			r0 = r0 ^ r0; // ERROR: Invalid UTF32 char. r0 = 0;
+		}
+	} else {
+		r15 = 0d800h;
+		if (r0 >= r15){
+			r15 = 0dfffh;
+			if (r0 <= r15){
+				r0 = r0 ^ r0; // ERROR: Invalid UTF32 value. r0 = 0;
+			}
+		}
+	}
+	pop r15, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u16_2_u8_str()
+//
+// takes a UTF16 encoded string and returns UTF8 encoded string.
+//
+// source_ptr = UTF16 encoded string
+// dest_ptr = byte array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u16_2_u8_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of bytes
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	r3 = r3 ^ r3;						// r3 = 0;
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2w = [r5+2];						// Get our source character count = rcx.
+	r9b = [r4];							// r9 = space we have in bytes
+	
+	r5 = r5 + 4;						// Goto the first character
+	r4 = r4 + 2;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0w = [r5];						// Get our first character
+		r15 = 0d800h;
+		if (r0 >= r15){
+			r15 = 0dfffh;
+			if (r0 <= r15){
+				// We have a surrogate pair
+				r5 = r5 + 2;
+				r3w = [r5];
+				r3 = r3 << 16;
+				r0 = r0 | r3;			// bits 0-15 = 1st word, bits 16-31 = 2nd word
+				r2 = r2 - 1;			// Adjust source count.
+			}
+		}
+		r0 = u16_2_u8_char(r0);
+		r15 = 0ffh;
+		if (r0 <= r15){
+			// Single charcter
+			[r4] = r0b;
+			r4 = r4 + 1;
+			r8 = r8 + 1;
+		} else {
+			r15 = 0ffffh;
+			if (r0 <= r15){
+				// 2byte encoding;
+				[r4] = r0w;
+				r4 = r4 + 2;
+				r8 = r8 + 2;
+			} else {
+				r15 = 0ffffffh;
+				if (r0 <= r15){
+					// 3 byte encoding
+					[r4] = r0w;
+					r0 = r0 >> 16;
+					[r4+2] = r0b;
+					r8 = r8 + 3;
+					r4 = r4 + 3;
+				} else { 
+					// 4 byte encoding
+					[r4] = r0d;
+					r4 = r4 + 4;
+					r8 = r8 + 4;
+				}
+			}
+		}
+		if (r9 <= r8) {
+			// Oops, ran out of room!
+			r4 = dest_ptr;
+			[r4+1] = r8b;
+			return(r8);
+		}
+		r5 = r5 + 2;
+		r2 = r2 - 1;
+	}
+	r9 = r9 ^ r9;
+	[r4] = r9;	// null terminate the string;
+	r4 = dest_ptr;
+	[r4+1] = r8b;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u32_2_u8_str()
+//
+// takes a UTF32 encoded string and returns UTF8 encoded string.
+//
+// source_ptr = UTF32 encoded string
+// dest_ptr = byte array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u32_2_u8_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+	
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of bytes
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	r3 = r3 ^ r3;						// r3 = 0;
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2w = [r5+4];						// Get our source character count = rcx.
+	r9b = [r4];							// r9 = space we have in bytes
+	
+	r5 = r5 + 8;						// Goto the first character
+	r4 = r4 + 2;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0d = [r5];						// Get our first character
+		r0 = u32_2_u8_char(r0);
+		r15 = 0ffh;
+		if (r0 <= r15){
+			// Single charcter
+			[r4] = r0b;
+			r4 = r4 + 1;
+			r8 = r8 + 1;
+		} else {
+			r15 = 0ffffh;
+			if (r0 <= r15){
+				// 2byte encoding;
+				[r4] = r0w;
+				r4 = r4 + 2;
+				r8 = r8 + 2;
+			} else {
+				r15 = 0ffffffh;
+				if (r0 <= r15){
+					// 3 byte encoding
+					[r4] = r0w;
+					r0 = r0 >> 16;
+					[r4+2] = r0b;
+					r8 = r8 + 3;
+					r4 = r4 + 3;
+				} else { 
+					// 4 byte encoding
+					[r4] = r0d;
+					r4 = r4 + 4;
+					r8 = r8 + 4;
+				}
+			}
+		}
+		if (r9 <= r8) {
+			// Oops, ran out of room!
+			r4 = dest_ptr;
+			[r4+2] = r8b;
+			return(r8);
+		}
+		r5 = r5 + 4;
+		r2 = r2 - 1;
+	}
+	r4 = dest_ptr;
+	[r4+2] = r8b;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u8_2_u16_str()
+//
+// takes a UTF8 encoded string and returns UTF16 encoded string.
+//
+// source_ptr = UTF8 encoded string
+// dest_ptr = UTF16 array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u8_2_u16_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of bytes
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2b = [r5+1];						// Get our source character count = rcx.
+	r9w = [r4];							// r9 = space we have in words
+	
+	if (r9 < r2){
+		pop r15, r9, r8, r5, r4, r3, r2, r1;
+		return();						// Return 0;
+	}
+	
+	r5 = r5 + 2;						// Goto the first character
+	r4 = r4 + 4;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0b = [r5];						// Get our first character
+		r15 = 07fh;
+		if (r0 > r15){
+			// Multi byte encoding
+			r15 = 0dfh;
+			if (r0 > r15){
+				// 3 or more bytes
+				r15 = 0f0h;
+				if (r0 > r15){
+					// 4 byte sequence
+					r1 = r1 ^ r1;
+					r1b = [r5+1];
+					r1 = r1 << 8;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+2];
+					r1 = r1 << 16;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+3];
+					r1 = r1 << 24;
+					r0 = r0 | r1;
+					r5 = r5 + 3;
+					r2 = r2 - 3;
+				} else {
+					// 3 byte sequence
+					r1 = r1 ^ r1;
+					r1b = [r5+1];
+					r1 = r1 << 8;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+2];
+					r1 = r1 << 16;
+					r0 = r0 | r1;
+					r5 = r5 + 2;
+					r2 = r2 - 2;
+				}
+			} else {
+				// 2 byte sequence
+				r1 = r1 ^ r1;
+				r1b = [r5+1];
+				r1 = r1 << 8;
+				r0 = r0 | r1;
+				r5 = r5 + 2;
+				r2 = r2 - 2;
+			}
+		}
+		r0 = u8_2_u16_char(r0);
+		
+		r15 = 0d800h;
+		if (r0 >= r15){
+			r15 = 0dfffh;
+			if (r0 <= r15){
+				// We have a surrogate pair
+				[r4] = r0d;
+				r4 = r4 + 4;
+				r8 = r8 + 2;
+			} else {
+				[r4] = r0w;
+				r4 = r4 + 2;
+				r8 = r8 + 1;
+			}
+		} else {
+			[r4] = r0w;
+			r4 = r4 + 2;
+			r8 = r8 + 1;
+		}
+		r5 = r5 + 1;
+		r2 = r2 - 1;
+	}
+	r4 = dest_ptr;
+	[r4+2] = r8w;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u8_2_u32_str()
+//
+// takes a UTF8 encoded string and returns UTF32 encoded string.
+//
+// source_ptr = UTF8 encoded string
+// dest_ptr = UTF32 array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u8_2_u32_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of bytes
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2b = [r5+1];						// Get our source character count = rcx.
+	r9w = [r4];							// r9 = space we have in words
+	
+	if (r9 < r2){
+		pop r15, r9, r8, r5, r4, r3, r2, r1;
+		return();						// Return 0;
+	}
+	
+	r5 = r5 + 2;						// Goto the first character
+	r4 = r4 + 8;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0b = [r5];						// Get our first character
+		r15 = 07fh;
+		if (r0 > r15){
+			// Multi byte encoding
+			r15 = 0dfh;
+			if (r0 > r15){
+				// 3 or more bytes
+				r15 = 0f0h;
+				if (r0 > r15){
+					// 4 byte sequence
+					r1 = r1 ^ r1;
+					r1b = [r5+1];
+					r1 = r1 << 8;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+2];
+					r1 = r1 << 16;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+3];
+					r1 = r1 << 24;
+					r0 = r0 | r1;
+					r5 = r5 + 3;
+					r2 = r2 - 3;
+				} else {
+					// 3 byte sequence
+					r1 = r1 ^ r1;
+					r1b = [r5+1];
+					r1 = r1 << 8;
+					r0 = r0 | r1;
+					r1 = r1 ^ r1;
+					r1b = [r5+2];
+					r1 = r1 << 16;
+					r0 = r0 | r1;
+					r5 = r5 + 2;
+					r2 = r2 - 2;
+				}
+			} else {
+				// 2 byte sequence
+				r1 = r1 ^ r1;
+				r1b = [r5+1];
+				r1 = r1 << 8;
+				r0 = r0 | r1;
+				r5 = r5 + 2;
+				r2 = r2 - 2;
+			}
+		}
+		r0 = u8_2_u32_char(r0);
+		
+		[r4] = r0d;
+		r4 = r4 + 4;
+		r8 = r8 + 1;
+		
+		r5 = r5 + 1;
+		r2 = r2 - 1;
+	}
+	r4 = dest_ptr;
+	[r4+4] = r8d;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u16_2_u32_str()
+//
+// takes a UTF8 encoded string and returns UTF32 encoded string.
+//
+// source_ptr = UTF8 encoded string
+// dest_ptr = UTF32 array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u16_2_u32_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of bytes
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2b = [r5+2];						// Get our source character count = rcx.
+	r9w = [r4];							// r9 = space we have in words
+	
+	if (r9 < r2){
+		pop r15, r9, r8, r5, r4, r3, r2, r1;
+		return();						// Return 0;
+	}
+	
+	r5 = r5 + 2;						// Goto the first character
+	r4 = r4 + 8;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0w = [r5];						// Get our first character
+		r15 = 0d800h;
+		if (r0 >= r15){
+			r15 = 0dfffh;
+			if (r0 <= r15){
+				// We have a surrogate pair
+				r5 = r5 + 2;
+				r3w = [r5];
+				r3 = r3 << 16;
+				r0 = r0 | r3;			// bits 0-15 = 1st word, bits 16-31 = 2nd word
+				r2 = r2 - 1;			// Adjust source count.
+			}
+		}
+		r0 = u16_2_u32_char(r0);
+		
+		[r4] = r0d;
+		r4 = r4 + 4;					// Increase our dest ptr
+		r8 = r8 + 1;					// Increase our char count
+		
+		r5 = r5 + 2;					// Increase our source ptr
+		r2 = r2 - 1;					// Dec number of char to go
+	}
+	r4 = dest_ptr;
+	[r4+4] = r8d;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// u32_2_u16_str()
+//
+// takes a UTF32 encoded string and returns UTF16 encoded string.
+//
+// source_ptr = UTF32 encoded string
+// dest_ptr = UTF16 array.
+//
+// returns = number of chars converted.
+//
+//*****************************
+proc u32_2_u16_str(source_ptr, dest_ptr){
+	push r1, r2, r3, r4, r5, r8, r9, r15;
+	
+	r5 = source_ptr;
+	r4 = dest_ptr;
+	
+	r8 = r8 ^ r8;						// r8 = 0; r8 = number of words used
+	r9 = r9 ^ r9;						// r9 = 0; r9 = number of char
+	r3 = r3 ^ r3;						// r3 = 0;
+	
+	r2 = r2 ^ r2; 						// r2 = 0;
+	r2w = [r5+4];						// Get our source character count = rcx.
+	r9w = [r4];							// r9 = space we have in words
+	
+	r5 = r5 + 8;						// Goto the first character
+	r4 = r4 + 2;
+	while (r2){
+		r0 = r0 ^ r0;					// r0 = 0;
+		r0d = [r5];						// Get our first character
+		r0 = u32_2_u16_char(r0);
+		
+		r15 = 0d800h;
+		if (r0 >= r15){
+			r15 = 0dfffh;
+			if (r0 <= r15){
+				// We have a surrogate pair
+				[r4] = r0d;
+				r4 = r4 + 4;
+				r8 = r8 + 2;
+			} else {
+				[r4] = r0w;
+				r4 = r4 + 2;
+				r8 = r8 + 1;
+			}
+		} else {
+			[r4] = r0w;
+			r4 = r4 + 2;
+			r8 = r8 + 1;
+		}
+		
+		if (r9 <= r8) {
+			// Oops, ran out of room!
+			r4 = dest_ptr;
+			[r4+2] = r8w;
+			return(r8);
+		}
+		r5 = r5 + 4;
+		r2 = r2 - 1;
+	}
+	r4 = dest_ptr;
+	[r4+2] = r8w;
+	r0 = r8;
+	
+	pop r15, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+

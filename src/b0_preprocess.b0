@@ -1,0 +1,930 @@
+﻿proc preparse_token_stack(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	
+	m64 i;
+	m64 pp_token;
+	m64 int_value1;
+	m64 int_value2;
+	f64 fpu_value1;
+	f64 fpu_value2;
+	
+	r15 = &token_stack;
+	r14 = token;
+	r13 = &pp_token_stack;
+	r12 = 0;
+	pp_token = r12;
+	r11 = DEBUG;
+	
+	//i = token; // i holds the number of tokens to process.
+	r0 = token;
+	i = r0;
+	
+	if (r11){
+		echo_string(STDOUT, 'PREPROCESSING STACK : ');
+		r2 = 0;
+		r1 = i;
+		while (r2 < r1){
+			r3 = [r15+r2*8];
+			echo_hex(STDOUT, r3);
+			echo_string(STDOUT, ' ');
+			r2 = r2 + 1;
+		}
+		echo_cr(STDOUT);
+	}
+	
+	r10 = 0; 		// Set our initial state;
+	r1 = i;
+	r3 = HASH_OFFSET;
+	r4 = TOKEN_NUM_DECIMAL;
+	r5 = TOKEN_NUM_INTEGER;
+	r8 = TYPE_DEFINE;
+	r9 = TYPE_STRUC;
+	r2 = 0;
+	while(r2 < r1){
+		r0 = [r15+r2*8];		// our token
+		if(r0 == r4){
+			r2 = r2 + 1;	// Skip our number
+		}
+		r5 = TOKEN_NUM_INTEGER;		
+		if(r0 == r5){
+			r2 = r2 + 1;	// Skip our number
+		}
+		if (r0 > r3){
+			r0 = r0 - r3;
+			r0 = hash_table[r0].token_type;
+			r5 = r0 && r8;
+			if (r5 == r8){
+				r10 = 1;
+				push r0;
+				if(r11){
+					echo_string(STDOUT, 'Define Found\n');
+				}
+				pop r0;
+			}
+			r5 = r0 && r9;
+			if (r5 == r9){
+				r10 = 1;
+				push r0;
+				if(r11){
+					echo_string(STDOUT, 'STRUC Found\n');
+				}
+				pop r0;
+			}
+		}
+		r2 = r2 + 1;
+	}
+	r5 = TOKEN_NUM_INTEGER;
+	if (r10){
+		// The stack may have something we need to handle...
+		// We first expand the token stack into pp_token_stack;
+		if (r11){
+			echo_string(STDOUT, 'Stack contains defines - starting to process\n');
+		}
+		r14 = 0;
+		r12 = 0;
+		r10 = TOKEN_STACK_SIZE*2;		// Our overflow marker.
+		while(r14 < r1){
+			if(r12 >= r10){
+				abort_b0('INTERNAL: Token stack expansion overflow start of preprocessing! - Increase TOKEN_STACK_SIZE');
+			}
+			r0 = [r15+r14*8];
+			push r0;
+			if(r11){
+				push r0;
+				echo_string(STDOUT, 'Token = ');
+				echo_integer(STDOUT, r14);
+				echo_string(STDOUT, '; PP_Token = ');
+				echo_integer(STDOUT, r12);
+				echo_string(STDOUT, '; Token = ');
+				pop r0;
+				echo_hex(STDOUT, r0);
+				echo_cr(STDOUT);
+			}
+			pop r0;
+			r4 = TOKEN_PREPARSER;
+			if(r4 == r0){
+				[r13+r12*8] = r0;
+				// We have a preprocessor marker, just copy until we get to the 3rd token.
+				r0 = [r15+r14*8+8];
+				[r13+r12*8+8] = r0;
+				r0 = [r15+r14*8+16];
+				[r13+r12*8+16] = r0;	
+				r14 = r14 + 3;
+				r12 = r12 + 3;
+				if(r11){
+					echo_string(STDOUT, 'Have # symbol\n'); 
+				}
+			} else {
+				if(r0 < r3){
+					r4 = TOKEN_NUM_DECIMAL;
+					r5 = TOKEN_NUM_INTEGER;
+					// See if we have a immediate, or string;
+					if(r0 == r4){
+						// We have a immediate decimal
+						[r13+r12*8] = r0;
+						r0 = [r15+r14*8+8];
+						[r13+r12*8+8] = r0;
+						r14 = r14 + 2;
+						r12 = r12 + 2;
+						if(r11){
+							echo_string(STDOUT, 'Have immediate Decimal\n'); 
+						}
+					} else {
+						if(r0 == r5){
+							// We have a immediate integer
+							[r13+r12*8] = r0;
+							r0 = [r15+r14*8+8];
+							[r13+r12*8+8] = r0;
+							r14 = r14 + 2;
+							r12 = r12 + 2;	
+							if(r11){
+								echo_string(STDOUT, 'Have immediate Integer\n'); 
+							}
+						} else {
+							r5 = TOKEN_STRING;
+							if(r0 == r5){
+								// We have a string;
+								r5 = TOKEN_END_STRING;
+								while(r0 != r5){
+									[r13+r12*8] = r0;
+									r14 = r14 + 1;
+									r12 = r12 + 1;
+									r0 = [r15+r14*8];
+								}
+							} 
+							// We have a standard token or a end of string token;
+							[r13+r12*8] = r0;
+							r14 = r14 + 1;
+							r12 = r12 + 1;			
+							if(r11){
+								echo_string(STDOUT, 'Have token\n'); 
+							}
+						}
+					}
+				} else {
+					// We have a hash
+					r2 = r0 - r3;
+					r2 = hash_table[r2].token_type;
+					r8 = TYPE_DEFINE;
+					r4 = r2 && r8;
+					if(r4 == r8){
+						r2 = r2 - TYPE_DEFINE;
+						if(r11){
+							push r0;
+							echo_string(STDOUT, 'Token_type = ');
+							echo_hex(STDOUT, r2);
+							echo_cr(STDOUT);
+							pop r0;
+						}
+						// We have a define;
+						r4 = TYPE_F64;
+						if(r11){
+							push r0;
+							echo_string(STDOUT, 'Result Token_type (test FP) = ');
+							echo_hex(STDOUT, r4);
+							echo_string(STDOUT, ' vs ');
+							echo_hex(STDOUT, r2);
+							echo_cr(STDOUT);
+							pop r0;
+						}
+						if(r2 == r4){
+							// We have a FP64 define;
+							r2 = r0 - r3;
+							r0 = &hash_table[r2].define_fp;
+							r0 = [r0];
+							r2 = TOKEN_NUM_DECIMAL;
+							[r13+r12*8] = r2;
+							[r13+r12*8+8] = r0;
+							r12 = r12 + 2;
+							r14 = r14 + 1;
+							if(r11){
+								echo_string(STDOUT, 'Have defined FP\n'); 
+							}
+						} else {
+							r4 = TYPE_MAX_REG;
+							if(r11){
+								push r0;
+								echo_string(STDOUT, 'Result Token_type (test INT) = ');
+								echo_hex(STDOUT, r4);
+								echo_string(STDOUT, ' vs ');
+								echo_hex(STDOUT, r2);
+								echo_cr(STDOUT);
+								pop r0;
+							}
+							if(r2 == r4){
+								// We have a INT define;
+								r2 = r0 - r3;
+								r0 = hash_table[r2].define_int;
+								r2 = TOKEN_NUM_INTEGER;
+								[r13+r12*8] = r2;
+								[r13+r12*8+8] = r0;
+								r12 = r12 + 2;
+								r14 = r14 + 1;			
+								if(r11){
+									echo_string(STDOUT, 'Have defined Integer\n'); 
+								}
+							} else {
+								// We have a string define;
+								push r14, r15;								
+								r2 = TOKEN_STRING;
+								[r13+r12*8] = r2;
+								r12 = r12 + 1;
+								r2 = r0 - r3;
+								r15 = &hash_table[r2].token_import_name;
+								r14 = [r15];
+								r0 = 0;
+								while(r14 != r0){
+									[r13+r12*8] = r14;
+									r15 = r15 + 8;
+									r12 = r12 + 1;
+									r14 = [r15];
+								}
+								pop r15, r14;
+								r2 = TOKEN_END_STRING;
+								[r13+r12*8] = r2;
+								r12 = r12 + 1;
+								r14 = r14 + 1;
+								if(r11){
+									echo_string(STDOUT, 'Have defined string\n'); 
+								}
+							}
+						}
+					} else {
+						r8 = TYPE_STRUC;
+						r4 = r2 && r9;
+						if(r4 == r9){
+							// We have a struct
+							// But do we have a structure definition or a use of a structure pointer.
+							push r0;
+							r0 = 0;
+							if(r14 != r0){
+								pop r0;
+								push r1, r2, r3, r4, r5;
+								//Lets first get the structure pointer...
+								//struc_ptr = hash_table[token_stack[token]-HASH_OFFSET].struc_ptr;
+								if(r11){
+									push r0, r0;
+									echo_string(STDOUT, 'Token Hash = ');
+									pop r0;
+									echo_hex(STDOUT, r0);
+									echo_cr(STDOUT);
+									pop r0;
+								}
+								
+								r2 = r0 - r3;
+								r2 = hash_table[r2].struc_ptr;
+								
+								if (r11){
+									echo_string(STDOUT, 'Define: struc_ptr = ');
+									echo_hex(STDOUT, r2);
+									echo_cr(STDOUT);
+								}
+								
+								r1 = 0;		// We set the offset to zero.
+								
+								//if (token_stack[token+1] == TOKEN_FULLSTOP) {
+								r14 = r14 + 1;
+								r3 = [r15+r14*8];
+								r4 = TOKEN_FULLSTOP;
+								if (r3 == r4){
+									if(r11){
+										echo_string(STDOUT, 'Sub-element of variable, eg a structure is being used\n');
+									}
+									r14 = r14 + 1;
+									r4 = 1;
+									r5 = [r15+r14*8];
+									r5 = r5 - HASH_OFFSET;		// This our hash we are testing for.
+									r0 = 0;
+									while(r4){
+										r4 = 1;
+										r3 = r0 << 5;			// Each entry is 32 bytes in site.
+										r3 = [r2+r3+struct_entry.hash];		// r3 = hash;
+										if (r3 == r5){
+											r4 = 0;
+											r0 = r0 - 1;
+										}									
+										push r0;
+										if(r11){
+											echo_string(STDOUT, 'Testing hash: ');
+											echo_hex(STDOUT, r5);
+											echo_string(STDOUT, ' => ');
+											echo_hex(STDOUT, r3);
+											echo_cr(STDOUT);
+										}
+										r0 = 0;
+										if (r3 == r0){
+											abort_b0('Structure does not contain sub-object defined');
+										}
+	
+										pop r0;									
+										r0 = r0 + 1;
+									}
+									r3 = r0 << 5;
+									r1 = [r2+r3+struct_entry.offset];		// r3 = offset;
+								}
+								r0 = r1;
+								pop r5, r4, r3, r2, r1;
+								// r0 is our offset.
+								r2 = TOKEN_NUM_INTEGER;
+								[r13+r12*8] = r2;
+								[r13+r12*8+8] = r0;
+								r12 = r12 + 2;
+								r14 = r14 + 1;
+							} else {
+								// We have a standard hash.
+								pop r0;
+								[r13+r12*8] = r0;
+								r14 = r14 + 1;
+								r12 = r12 + 1;			
+								if(r11){
+									echo_string(STDOUT, 'Have structure definition - no transform\n'); 
+								}							
+							}
+						} else {
+							// We have a standard hash.
+							[r13+r12*8] = r0;
+							r14 = r14 + 1;
+							r12 = r12 + 1;			
+							if(r11){
+								echo_string(STDOUT, 'Have normal hash - no transform\n'); 
+							}
+						}
+					}
+				}
+			}
+		}
+		pp_token = r12;
+		// Now that we have finished expanding it... now try to reduce it.
+		r11 = DEBUG;
+		if (r11){
+			echo_string(STDOUT, 'Stack contains defines - expanded the stack\n');
+			echo_string(STDOUT, 'PREPROCESSING STACK : ');
+			r2 = 0;
+			r1 = pp_token;
+			while (r2 < r1){
+				r3 = [r13+r2*8];
+				echo_hex(STDOUT, r3);
+				echo_string(STDOUT, ' ');
+				r2 = r2 + 1;
+			}
+			echo_cr(STDOUT);
+		}
+		// Copy the stack to the token stack.
+		r15 = &pp_token_stack_2;
+		r10 = 0;
+		while(r10 < r12){
+			r0 = [r13+r10*8];
+			[r15+r10*8] = r0;
+			r10 = r10 + 1;
+		}
+		// pp_token_stack_2 = our new stack...
+		// pp_token_stack is the one we write to. so now clear that.
+		r10 = 0;
+		r9 = 0;
+		while(r10 < r12){
+			[r13+r10*8] = r9;
+			r10 = r10 + 1;
+		}
+		r14 = r12;
+		// Now keep running through this loop until we reach the end.
+		// r15 = pp_token_stack2;
+		// r14 = pp_token_stack2 count;
+		// r13 = pp_token_stack;
+		// r12 = pp_token_stack count;
+		// r11 = DEBUG
+		// r10 = continue to loop flag;
+		// r9 = pp_token_stack2 index
+		r10 = 1;
+		while(r10){
+			r9 = 0;
+			r12 = 0;
+			while(r9 < r14){
+				// we scan through our pp_token_stack2 for strings to concat and copy the result to pp_token_stack.
+				r10 = 0;
+				r0 = [r15+r9*8];
+				r8 = TOKEN_END_STRING;
+				if(r0 == r8){
+					// We have a string end... let's see if the next one is a '+' followed by another string.
+					r1 = [r15+r9*8+8];
+					r2 = TOKEN_ADD;
+					if(r1 == r2){
+						r1 = [r15+r9*8+16];
+						r2 = TOKEN_STRING;
+						if(r1 == r2){
+							r9 = r9 + 2;
+							r10 = 1;
+						}
+					} else {
+						[r13+r12*8] = r0;
+						r12 = r12 + 1;					
+					}
+				} else {
+					[r13+r12*8] = r0;
+					r12 = r12 + 1;
+				}
+				r9 = r9 + 1;
+			}
+			// copy pp_token_stack back to pp_token_stack2.
+			r1 = 0;
+			while(r1 < r12){
+				r0 = [r13+r1*8];
+				[r15+r1*8] = r0;
+				r1 = r1 + 1;
+			}
+		}
+		
+		r14 = r12;
+		pp_token = r12;
+		// Now keep running through this loop until we reach the end.
+		// r15 = pp_token_stack2;
+		// r14 = pp_token_stack2 count;
+		// r13 = pp_token_stack;
+		// r12 = pp_token_stack index;
+		// r11 = DEBUG
+		// r10 = continue to loop flag;
+		// r9 = pp_token_stack2 index
+		if(r11){
+			echo_string(STDOUT, 'Begin integer reduction run\n');
+		}
+		r10 = 1;
+		while(r10){
+			if (r11){
+				echo_string(STDOUT, 'Stack contains defines - redefining integers\n');
+				echo_string(STDOUT, 'PREPROCESSING STACK : ');
+				r2 = 0;
+				r1 = pp_token;
+				while (r2 < r1){
+					r3 = [r13+r2*8];
+					echo_hex(STDOUT, r3);
+					echo_string(STDOUT, ' ');
+					r2 = r2 + 1;
+				}
+				echo_cr(STDOUT);
+			}
+			r9 = 0;
+			r12 = 0;
+			while(r9 < r14){
+				// we scan through our pp_token_stack2 for integer numbers to concat and copy the result to pp_token_stack.
+				r10 = 0;
+				r0 = [r15+r9*8];
+				r8 = TOKEN_NUM_INTEGER;
+				if(r11){
+					push r0, r0;
+					echo_string(STDOUT, 'Testing token: ');
+					echo_integer(STDOUT, r9);
+					echo_string(STDOUT, ' of ');
+					echo_integer(STDOUT, r14);
+					echo_string(STDOUT, '; new stack count = ');
+					echo_integer(STDOUT, r12);	
+					echo_string(STDOUT, '; current token = ');
+					pop r0;
+					echo_hex(STDOUT, r0);
+					echo_cr(STDOUT);
+					pop r0;
+				}
+				if(r0 == r8){
+					r0 = r9 + 2;
+					if(r0 < r14){
+						// We have more tokens past the number.
+						r1 = [r15+r9*8+16];
+						// Get the token past our number and if a math operator let's look at it.
+						r1 = r1 - TOKEN_OFFSET;
+						r4 = r1;	// Save our operator.
+						r2 = TOKEN_LSHIFT - TOKEN_OFFSET;
+						if(r1 <= r2){
+							r2 = TOKEN_EQUATE;
+							if(r1 != r2){
+								// Yep we have something we can work with.
+								// But we need to check IF this number is proceeded by <multiply> and skip it if it does.
+								r1 = [r15+r9*8-8];
+								r2 = TOKEN_MULTIPLY;
+								if(r1 != r2){
+									r1 = [r15+r9*8+24];
+									r2 = TOKEN_NUM_DECIMAL;
+									r3 = 0;
+									r10 = 1;
+									if(r1 == r8){
+										r3 = 1;	// Our next number is a INT
+									}
+									
+									if(r1 == r2){
+										r3 = 1;	// Our next number is a FPU.
+									}
+									if(r3){
+										if(r1 == r8){
+	
+											r1 = [r15+r9*8+32];		// Value 2
+											r2 = [r15+r9*8+8];		// Value 1
+											// We have another int
+											if(r11){
+												echo_string(STDOUT, 'Int math operator; r9 =');
+												echo_integer(STDOUT, r9);
+												echo_string(STDOUT, '; r4 =');
+												echo_hex(STDOUT, r4);
+												echo_string(STDOUT, '; r1 =');
+												echo_integer(STDOUT, r1);
+												echo_string(STDOUT, '; r2 =');
+												echo_integer(STDOUT, r2);
+												echo_cr(STDOUT);
+											}
+											r8 = TOKEN_AND - TOKEN_OFFSET; if(r4 == r8){ r2 = r2 && r1; };
+											r8 = TOKEN_OR - TOKEN_OFFSET; if(r4 == r8){ r2 = r2 | r1; };
+											r8 = TOKEN_XOR - TOKEN_OFFSET; if(r4 == r8){ r2 = r2 ^ r1; };
+											r8 = TOKEN_ADD - TOKEN_OFFSET; if(r4 == r8){ r2 = r2 + r1; };
+											r8 = TOKEN_MINUS - TOKEN_OFFSET; if(r4 == r8){ r2 = r2 - r1; };
+											
+											r8 = TOKEN_NOT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use NOT operator for math reduction'); };
+											
+											r8 = TOKEN_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){push r0, r3; r0 = r2; r3 = 0; r0 = r0 * r1; r1 = r0; pop r3, r0;};
+											r8 = TOKEN_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ push r0, r3; r0 = r2; r3 = 0; r0 = r0 / r1; r1 = r0; pop r3, r0; };
+											r8 = TOKEN_MODULUS - TOKEN_OFFSET; if(r4 == r8){ push r0, r3; r0 = r2; r3 = 0; r0 = r0 / r1; r1 = r3; pop r3, r0; };
+											r8 = TOKEN_S_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){ push r0, r3; r0 = r2; r3 = 0; r0 = r0 ~* r1; r1 = r0; pop r3, r0; };
+											r8 = TOKEN_S_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ push r0, r3; r0 = r2; r3 = 0; r0 = r0 ~/ r1; r1 = r0; pop r3, r0; };
+											r8 = TOKEN_S_MODULUS - TOKEN_OFFSET; if(r4 == r8){ push r0, r3; r0 = r2; r3 = 0; r0 = r0 ~/ r1; r1 = r3; pop r3, r0; };
+											
+											r8 = TOKEN_RROTATE - TOKEN_OFFSET; if(r4 == r8){ r3 = r2; r2 = r1; r3 = r3 >>> r2; r2 = r3; };
+											r8 = TOKEN_LROTATE - TOKEN_OFFSET; if(r4 == r8){ r3 = r2; r2 = r1; r3 = r3 <<< r2; r2 = r3; };
+											r8 = TOKEN_RSHIFT - TOKEN_OFFSET; if(r4 == r8){ r3 = r2; r2 = r1; r3 = r3 >> r2; r2 = r3; };
+											r8 = TOKEN_LSHIFT - TOKEN_OFFSET; if(r4 == r8){ r3 = r2; r2 = r1; r3 = r3 << r2; r2 = r3; };		
+											r0 = TOKEN_NUM_INTEGER;
+										} else {
+											if(r11){
+												echo_string(STDOUT, 'FPU math operator in int block\n');
+											}
+											r1 = [r15+r9*8+32];		// Value 2
+											r2 = [r15+r9*8+8];		// Value 1
+											// We have a FPU
+											r5 = &fpu_value2;
+											[r5] = r1;
+											int_value1 = r2;
+											fp0 = fpu_value2;
+											fp0 = int_value1;
+											
+											r8 = TOKEN_AND - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use AND operator for math reduction on FP values'); };
+											r8 = TOKEN_OR - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use OR operator for math reduction for FP values'); };
+											r8 = TOKEN_XOR - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use XOR operator for math reduction for FP values'); };
+											r8 = TOKEN_ADD - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 + fp1; };
+											r8 = TOKEN_MINUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 - fp1; };
+											
+											r8 = TOKEN_NOT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use NOT operator for math reduction for FP values'); };
+											
+											r8 = TOKEN_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 * fp1; };
+											r8 = TOKEN_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 / fp1; };
+											r8 = TOKEN_MODULUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 % fp1; };
+											r8 = TOKEN_S_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~* fp1; };
+											r8 = TOKEN_S_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~/ fp1; };
+											r8 = TOKEN_S_MODULUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~% fp1; };
+											
+											r8 = TOKEN_RROTATE - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Rotate operator for math reduction for FP values'); };
+											r8 = TOKEN_LROTATE - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Rotate operator for math reduction for FP values'); };
+											r8 = TOKEN_RSHIFT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Shift operator for math reduction for FP values'); };
+											r8 = TOKEN_LSHIFT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Shift operator for math reduction for FP values'); };						
+											
+											fpu_value2 = fp0;
+											fpu_value1 = fp0;	// Clean up the stack.
+											r2 = [r5];
+											r0 = TOKEN_NUM_DECIMAL;
+										}
+										[r13+r12*8] = r0;		// Token_type
+										[r13+r12*8+8] = r2;		// Value
+										r12 = r12 + 2;
+										r9 = r9 + 5;
+										r10 = 1;
+										if(r11){
+											push r0, r0;
+											echo_string(STDOUT, 'r9 = ');
+											echo_integer(STDOUT, r9);
+											echo_string(STDOUT, '; r14 = ');
+											echo_integer(STDOUT, r14);
+											echo_string(STDOUT, '; new stack count (r12) = ');
+											echo_integer(STDOUT, r12);	
+											echo_string(STDOUT, '; current token = ');
+											pop r0;
+											echo_hex(STDOUT, r0);
+											echo_string(STDOUT, '; new value (r2) = ');
+											echo_integer(STDOUT, r2);										
+											echo_cr(STDOUT);
+											pop r0;
+										}
+										
+										// now copy the rest to the new stack
+										while(r9 < r14){
+											r0 = [r15+r9*8];
+											[r13+r12*8] = r0;
+											r9 = r9 + 1;
+											r12 = r12 + 1;
+										}
+									} else {
+										// Don't know so just copy to the stack and let the rest of the back end sort it out.
+										r0 = [r15+r9*8];
+										[r13+r12*8] = r0;
+										r12 = r12 + 1;
+									}
+								} else {
+									// We just copy the token to the new stack
+									r0 = [r15+r9*8];
+									[r13+r12*8] = r0;
+									r12 = r12 + 1;
+									if(r11){
+										push r0;
+										echo_string(STDOUT, 'Straight copy 0 - r0 = ');
+										pop r0;
+										echo_hex(STDOUT, r0);
+										echo_cr(STDOUT);
+									}
+								}
+							} else {
+								abort_b0('Unable to use Equate operator for math reduction');
+							}  // End if we have a token we should be able to work with
+						}	else {
+							// We just copy the token to the new stack
+							r0 = [r15+r9*8];
+							[r13+r12*8] = r0;
+							r12 = r12 + 1;
+							if(r11){
+								push r0;
+								echo_string(STDOUT, 'Straight copy 1 - r0 = ');
+								pop r0;
+								echo_hex(STDOUT, r0);
+								echo_cr(STDOUT);
+							}
+						}
+					}  else {
+						// We just copy the token to the new stack
+						r0 = [r15+r9*8];
+						[r13+r12*8] = r0;
+						r0 = [r15+r9*8+8];
+						[r13+r12*8+8] = r0;
+						r12 = r12 + 2;
+						r9 = r9 + 1;
+						if(r11){
+							push r0;
+							echo_string(STDOUT, 'Straight copy 2 - r0 = ');
+							pop r0;
+							echo_hex(STDOUT, r0);
+							echo_cr(STDOUT);
+						}
+					}// end if we are end of token stack.
+				} else {
+					// We just copy the token to the new stack
+					[r13+r12*8] = r0;
+					r12 = r12 + 1;		
+					if(r11){
+						push r0;
+						echo_string(STDOUT, 'Straight copy 3 - r0 = ');
+						pop r0;
+						echo_hex(STDOUT, r0);
+						echo_cr(STDOUT);
+					}
+				}  // end if we have a TOKEN_NUM_INTEGER
+				r9 = r9 + 1;
+			}
+			
+			// copy pp_token_stack back to pp_token_stack2.
+			r1 = 0;
+			while(r1 < r12){
+				r0 = [r13+r1*8];
+				[r15+r1*8] = r0;
+				r1 = r1 + 1;
+			}
+			pp_token = r12;
+			r14 = r12;
+		}
+		
+		r14 = r12;
+		pp_token = r12;
+		// Now keep running through this loop until we reach the end.
+		// r15 = pp_token_stack2;
+		// r14 = pp_token_stack2 count;
+		// r13 = pp_token_stack;
+		// r12 = pp_token_stack index;
+		// r11 = DEBUG
+		// r10 = continue to loop flag;
+		// r9 = pp_token_stack2 index
+		if(r11){
+			echo_string(STDOUT, 'Begin FPU reduction run\n');
+		}
+		r10 = 1;
+		while(r10){
+			if (r11){
+				echo_string(STDOUT, 'Stack contains defines - redefining FPU Values\n');
+				echo_string(STDOUT, 'PREPROCESSING STACK : ');
+				r2 = 0;
+				r1 = pp_token;
+				while (r2 < r1){
+					r3 = [r13+r2*8];
+					echo_hex(STDOUT, r3);
+					echo_string(STDOUT, ' ');
+					r2 = r2 + 1;
+				}
+				echo_cr(STDOUT);
+			}
+			r9 = 0;
+			r12 = 0;
+			while(r9 < r14){
+				// we scan through our pp_token_stack2 for integer numbers to concat and copy the result to pp_token_stack.
+				r10 = 0;
+				r0 = [r15+r9*8];
+				r8 = TOKEN_NUM_DECIMAL;
+				if(r11){
+					push r0, r0;
+					echo_string(STDOUT, 'Testing token: ');
+					echo_integer(STDOUT, r9);
+					echo_string(STDOUT, ' of ');
+					echo_integer(STDOUT, r14);
+					echo_string(STDOUT, '; new stack count = ');
+					echo_integer(STDOUT, r12);	
+					echo_string(STDOUT, '; current token = ');
+					pop r0;
+					echo_hex(STDOUT, r0);
+					echo_cr(STDOUT);
+					pop r0;
+				}
+				if(r0 == r8){
+					r0 = r9 + 2;
+					if(r0 < r14){
+						// We have more tokens past the number.
+						r1 = [r15+r9*8+16];
+						// Get the token past our number and if a math operator let's look at it.
+						r1 = r1 - TOKEN_OFFSET;
+						r4 = r1;	// Save our operator.
+						r2 = TOKEN_LSHIFT - TOKEN_OFFSET;
+						if(r1 <= r2){
+							r2 = TOKEN_EQUATE;
+							if(r1 != r2){
+								// Yep we have something we can work with.
+								r1 = [r15+r9*8+24];
+								r2 = TOKEN_NUM_DECIMAL;
+								r3 = 0;
+								r10 = 1;
+								if(r1 == r8){
+									r3 = 1;	// Our next number is a INT
+								}
+								if(r1 == r2){
+									r3 = 1;	// Our next number is a FPU.
+								}
+								if(r3){
+									if(r1 == r8){
+
+										r1 = [r15+r9*8+32];		// Value 2
+										r2 = [r15+r9*8+8];		// Value 1
+										// We have an int
+										r5 = &int_value2;
+										[r5] = r1;
+										r5 = &fpu_value1;
+										[r5] = r2;
+										fp0 = int_value2;
+										fp0 = fpu_value1;
+
+									} else {
+										// We have a fpu
+
+										r1 = [r15+r9*8+32];		// Value 2
+										r2 = [r15+r9*8+8];		// Value 1
+										// We have a FPU
+										r5 = &fpu_value2;
+										[r5] = r1;
+										r5 = &fpu_value1;
+										[r5] = r2;
+										fp0 = fpu_value2;
+										fp0 = fpu_value1;
+										
+									}
+									
+									r8 = TOKEN_AND - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use AND operator for math reduction on FP values'); };
+									r8 = TOKEN_OR - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use OR operator for math reduction for FP values'); };
+									r8 = TOKEN_XOR - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use XOR operator for math reduction for FP values'); };
+									r8 = TOKEN_ADD - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 + fp1; };
+									r8 = TOKEN_MINUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 - fp1; };
+									
+									r8 = TOKEN_NOT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use NOT operator for math reduction for FP values'); };
+									
+									r8 = TOKEN_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 * fp1; };
+									r8 = TOKEN_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 / fp1; };
+									r8 = TOKEN_MODULUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 % fp1; };
+									r8 = TOKEN_S_MULTIPLY - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~* fp1; };
+									r8 = TOKEN_S_DIVIDE - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~/ fp1; };
+									r8 = TOKEN_S_MODULUS - TOKEN_OFFSET; if(r4 == r8){ fp0 = fp0 ~% fp1; };
+									
+									r8 = TOKEN_RROTATE - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Rotate operator for math reduction for FP values'); };
+									r8 = TOKEN_LROTATE - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Rotate operator for math reduction for FP values'); };
+									r8 = TOKEN_RSHIFT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Shift operator for math reduction for FP values'); };
+									r8 = TOKEN_LSHIFT - TOKEN_OFFSET; if(r4 == r8){ abort_b0('Unable to use Shift operator for math reduction for FP values'); };						
+									
+									fpu_value2 = fp0;
+									fpu_value1 = fp0;	// Clean up the stack.
+									r2 = [r5];
+									r0 = TOKEN_NUM_DECIMAL;
+
+									[r13+r12*8] = r0;		// Token_type
+									[r13+r12*8+8] = r2;		// Value
+									r12 = r12 + 2;
+									r9 = r9 + 5;
+									r10 = 1;
+									if(r11){
+										push r0, r0;
+										echo_string(STDOUT, 'r9 = ');
+										echo_integer(STDOUT, r9);
+										echo_string(STDOUT, '; r14 = ');
+										echo_integer(STDOUT, r14);
+										echo_string(STDOUT, '; new stack count (r12) = ');
+										echo_integer(STDOUT, r12);	
+										echo_string(STDOUT, '; current token = ');
+										pop r0;
+										echo_hex(STDOUT, r0);
+										echo_string(STDOUT, '; new value (r2) = ');
+										echo_hex(STDOUT, r2);										
+										echo_cr(STDOUT);
+										pop r0;
+									}
+									
+									// now copy the rest to the new stack
+									while(r9 < r14){
+										r0 = [r15+r9*8];
+										[r13+r12*8] = r0;
+										r9 = r9 + 1;
+										r12 = r12 + 1;
+									}
+								} else {
+									// Don't know so just copy to the stack and let the rest of the back end sort it out.
+									[r13+r12*8] = r0;
+									r12 = r12 + 1;
+								}
+							} else {
+								abort_b0('Unable to use Equate operator for math reduction');
+							}  // End if we have a token we should be able to work with
+						}	else {
+							// We just copy the token to the new stack
+							r0 = [r15+r9*8];
+							[r13+r12*8] = r0;
+							r12 = r12 + 1;
+							if(r11){
+								push r0;
+								echo_string(STDOUT, 'Straight copy 4 - r0 = ');
+								pop r0;
+								echo_hex(STDOUT, r0);
+								echo_cr(STDOUT);
+							}
+						}
+					}  else {
+						// We just copy the token to the new stack
+						r0 = [r15+r9*8];
+						[r13+r12*8] = r0;
+						r12 = r12 + 1;		
+						if(r11){
+							push r0;
+							echo_string(STDOUT, 'Straight copy 5 - r0 = ');
+							pop r0;
+							echo_hex(STDOUT, r0);
+							echo_cr(STDOUT);
+						}
+					}// end if we are end of token stack.
+				} else {
+					// We just copy the token to the new stack
+					[r13+r12*8] = r0;
+					r12 = r12 + 1;		
+					if(r11){
+						push r0;
+						echo_string(STDOUT, 'Straight copy 6 - r0 = ');
+						pop r0;
+						echo_hex(STDOUT, r0);
+						echo_cr(STDOUT);
+					}
+				}  // end if we have a TOKEN_NUM_INTEGER
+				r9 = r9 + 1;
+			}
+			
+			// copy pp_token_stack back to pp_token_stack2.
+			r1 = 0;
+			while(r1 < r12){
+				r0 = [r13+r1*8];
+				[r15+r1*8] = r0;
+				r1 = r1 + 1;
+			}
+			pp_token = r12;
+			r14 = r12;
+		}
+
+		// Copy the pp_token_stack to token_stack and set the token count.
+		token = r12;
+		r15 = &token_stack;
+		r10 = 0;
+		while(r10 < r12){
+			r0 = [r13+r10*8];
+			[r15+r10*8] = r0;
+			r10 = r10 + 1;
+		}
+		
+	} else {
+		if (r11){
+			echo_string(STDOUT, 'Stack does not contatin defines - skip preprocess stage\n');
+		}
+	}
+	r0 = token;
+	r1 = TOKEN_STACK_SIZE;
+	if (r0 >= r1){
+		abort_b0('INTERNAL: Token stack overflow post preprocessing! - Increase TOKEN_STACK_SIZE');
+	}
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(1);
+}

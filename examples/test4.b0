@@ -1,0 +1,19 @@
+﻿#COMPILER_OPTION PE UTF8;
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+
+#define INT = 1;
+#define DEC = 1.0;
+#define PATH = 'MyPath';
+
+m64 num = INT + 2;
+m64 num2 = INT + 2 + 3 + 4 + 5 << 2;
+f64 num3 = DEC + 1.0 + INT + DEC;
+m8 path2 = PATH+PATH;
+
+proc main(){
+	main(PATH+'2', 1234 );
+	//
+	//
+	r0 = [r1+r2*8+INT];
+	
+};

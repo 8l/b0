@@ -1,0 +1,1414 @@
+// This file contains all the non-OS specific primitives and helper functions normally found within libc.
+
+// proc strcpy(dest, src) {};
+// proc strcat(dest, src) {};
+// proc strcmp(src1, src2) {};
+// proc strrchr(src, char) {}; 
+// proc strlen(string) {};
+// proc isAlpha(character) {};
+// proc isXDigit(character) {};
+// proc isDigit(character) {};
+// proc isSpace(character) {};
+// proc ElfHash(string2hash) {};
+// proc PrintHeader() {};
+// proc PrintHelp() {};
+// proc dhtoi(number) {};
+// proc itoa(string, value) {};
+// proc itoah(string, value) {};
+// proc ftoa(string) {}:
+// proc atof(string) {};
+// proc DisplayLabelInfo() {};
+// proc v_size_is_p2(_size) {};
+	
+// OS-specific functions are used by these but are included else where.
+
+proc strcat(dest, src) {
+	push r1, r2, r3, r4, r5;
+	r5 = dest;
+	r5 = r5 + 2;
+	r4 = src;
+	r4 = r4 + 2;
+	r0 = 0;		// End of string;
+	r1 = r0;
+	r2 = r0;	// Our size of the string;
+	r3 = FILENAME_MAX;
+	r1b = [r5+r2];
+	while (r1 != r0){
+		r2 = r2 + 1;
+		r1b = [r5+r2];
+		if(r2 >= r3){
+			abort_b0('String is too long');
+		}
+	}
+	// r2 = pointer to NULL;
+	r3 = r3 ^ r3;
+	r1 = r1 ^ r1;
+	r1b = [r4+r3];
+	while(r1){
+		[r5+r2] = r1b;
+		r3 = r3 + 1;
+		r2 = r2 + 1;
+		r1b = [r4+r3];
+	}
+	r1 = 0;
+	[r5+r2] = r1;
+	pop r5, r4, r3, r2, r1;
+};
+
+proc strrchr(src, char) {   // returns the OFFSET into the string where the char occurs from the RIGHT.
+	push r1, r2, r3, r4, r5;
+	r5 = src;
+	r5 = r5 + 2;
+	r4 = char;
+	r0 = 0;		// End of string;
+	r1 = r0;	// Our character we are looking at;
+	r2 = r0;	// Our size of the string;
+	r3 = FILENAME_MAX;
+	r1b = [r5+r2];
+	while (r1 != r0){
+		r2 = r2 + 1;
+		r1b = [r5+r2];
+		if(r2 >= r3){
+			abort_b0('String is too long');
+		}
+	}
+	// r2 = our count;
+	while (r1 != r4){
+		r2 = r2 - 1;
+		if(r2 ~< r0){
+			pop r5, r4, r3, r2, r1;
+			return(0);  // char not found;
+		}
+		r1b = [r5+r2];
+	}	
+	r0 = r2;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc strlen(string) {
+	push r1, r2;
+	r1 = string;
+	r1 = r1 + 2;
+	r0 = r0 ^ r0;		// our count;
+	r2 = r0;			// our char;
+	r2b = [r1+r0];
+	while (r2){
+		r0 = r0 + 1;
+		r2b = [r1+r0];
+	}
+	//r0 = r0 + 1;
+	pop r2, r1;
+	return(r0);
+}
+
+// atof_variables
+
+m16 SaveFPUCW = 0;
+m16 MaskedFPUCW = 0;
+
+m64 _atof_isneg = 0;
+m64 _atof_expisneg = 0;
+m64 _atof_exp = 0;
+m8[32] _atof_bcd;
+m8[32] _atof_packed_bcd;
+m8[32] _atof_packed_bcd_tmp;
+
+m8[32] _ftoa_packed_bcd;
+
+// *******************************************************
+//
+// atof() related code
+//
+// *******************************************************
+
+proc atof_core(){ // r0 = BCD pointer, r1 = exp
+	asm{
+		fldl2t
+		fild qword [r1]
+		fmulp
+				; // We now have val = sig * 2 ^ exp
+				; // can't use f2mx1 direct as st0 MUST be -1 < x < 1
+
+		fstcw [_B0_SaveFPUCW] ;// Modify the control word to truncate when rounding.
+		fstcw [_B0_MaskedFPUCW];
+		or word [_B0_MaskedFPUCW], 0c00h ;
+		fldcw [_B0_MaskedFPUCW];
+
+		fld st0 ;			// Duplicate tos.
+		frndint ;			// Compute integer portion.
+		fldcw [_B0_SaveFPUCW];	// Restore rounding mode.
+		fxch ;				// Swap whole and int values.
+		fsub st0, st1;	    // Compute fractional part.
+		f2xm1;				// Compute 2^frac(x)-1.
+		fld1;
+		faddp;				// Compute 2^frac(x).
+		fxch;				// Get integer portion.
+		fld1;				// Compute 1*2^int(x).
+		fscale;
+		fstp st1;			// Remove st(1) (which is 1).
+		fmul st0, st1;		// Compute 2^int(x) * 2^frac(x).
+		fbld tword [r0]
+		fmulp
+		fstp st1;			// Clean FPU Stack
+	};
+	return(r0);
+};
+
+proc atof_clean_bcd(){
+	r0 = &_atof_bcd;
+	r1 = &_atof_packed_bcd;
+	r2 = r3;  // Should still be set from atof(); make r2 our bcd string count
+	r3 = 18;
+	r3 = r3 - r2; // Set the number of leading zeros
+	while(r3){
+		r9 = 0;
+		[r1] = r9b;	// insert our char back into the packed bcd string
+		r4 = r3;
+		r4 = r4 >> 1;
+		if(%CARRY){
+			r1 = r1 + 1; // Move onto the next packed bcd char
+		}
+		r3 = r3 - 1;
+	}
+	//Adjust off by one error if bcd count is ODD
+	r4 = r2;
+	r4 = r4 >> 1;
+	if(%CARRY){
+		r1 = r1 - 1;
+	}
+	// Now process the remaining char
+	while(r2){
+		r8 = 0;
+		r9 = 0;
+		r8b = [r0]; // Get our char
+		r8 = r8 && 00fh;
+		r9b = [r1]; // Get our packed bcd char
+		r4 = r2;
+		r4 = r4 >> 1;
+		if(%NOCARRY){
+			// If odd, then shift and OR.
+			r8 = r8 << 4;
+			r9 = r9 && 0fh;
+			r9 = r9 | r8;
+			[r1] = r9b;	// insert our char back into the packed bcd string
+		} else {
+			r9 = r9 && 0f0h;
+			r9 = r9 | r8;
+			[r1] = r9b;	// insert our char back into the packed bcd string
+			r1 = r1 + 1; // Move onto the next packed bcd char if need be
+		}
+		r0 = r0 + 1;
+		r2 = r2 - 1;
+	}	
+	// Problem is our packed bcd is the incorrect endian, need to correct it.
+	r0 = 10;
+	r1 = &_atof_packed_bcd;
+	r2 = &_atof_packed_bcd_tmp;
+	r3 = 0;
+	while(r0){
+		r3b = [r1];
+		[r2+r0-2] = r3b;
+		r0 = r0 - 1;
+		r1 = r1 + 1;
+	}
+	r1 = &_atof_packed_bcd;
+	r2 = &_atof_packed_bcd_tmp;
+	r3 = [r2];
+	[r1] = r3;
+	r3 = [r2+8];
+	[r1+8] = r3;
+	
+	return(r0);
+}
+
+proc atof_atoi(){
+	r4 = r0;
+	r1 = 0;
+	r0 = 0;
+	r1b = [r4];
+	r1 = r1 && 0ffh;
+	while (r1){
+		//value *= 10;
+		r0 = &[r0 + r0 * 4];
+		r0 = r0 << 1;
+		//value += (*number - '0');
+		r1 = r1 - CHAR_0; //'0'
+		r0 = r0 + r1;
+		//*number++;
+		r4 = r4 + 1;
+		r1b = [r4];
+		r1 = r1 && 0ffh;
+	}
+	return(r0);
+}
+
+
+proc atof(atof_str){ // r0 = pointer to string, return value in st0
+	push r0, r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r15;
+	// reg assignment
+	//   r0 = string pointer
+	//   r1 = Test character
+	//   r2 = 0;
+	//   r3 = bcd count
+	//   r4 = exp offset value = num of char BEFORE '.'
+	//   r5 = bcd string pointer
+	//   r8 = already processed non-zero
+	//   r9 = scratch register
+	//  r10 = scratch register 2
+	//  r11 = 18;  // const for bcd count so we don't overflow our bcd string.
+	//  r12 = already processed '.'
+	//  r13 = exp offset value = num of char AFTER '.'
+	//  r15 = character
+	r0 = atof_str;
+	r0 = r0 + 2;	// Skip string buffer size markers
+	r2 = 0;
+	_atof_exp = r2;
+	_atof_expisneg = r2;
+	_atof_isneg = r2;
+	r3 = r2;
+	r4 = r2;
+	r8 = r2;
+	r15 = r2;
+	r12 = r2;
+	r13 = r2;
+	r5 = &_atof_bcd;
+	r1 = CHAR_MINUS;
+	r15b = [r0];
+	// If first char a -
+	if (r15 == r1){
+		_atof_isneg = 1;
+		r0 = r0 + 1;
+	}
+	r1 = CHAR_PLUS;
+	r15b = [r0];
+	// If first char a +
+	if (r15 == r1){
+		_atof_isneg = 0;
+		r0 = r0 + 1;
+	}
+	
+	// Skip leading zeros;
+	r1 = CHAR_0;
+	r15b = [r0];
+	while (r15 == r1){
+		r0 = r0 + 1;
+		r15b = [r0];
+		if (r15 == r2){
+			// End of string;
+			asm {
+				fldz
+			}
+			pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+			return(r0);
+		}
+	}
+	// Should be at either a number or '.' or 'e'
+	r9 = 1;
+	while(r9 != r2){
+		// While r9 is not 0, we'll use r9 as our logical finish point.
+		// Keep looping, and set r9, if we get a null OR e char OR BCD string FULL
+		r10 = CHAR_e;
+		if (r15 == r10){
+			if(r3 == r2){
+				// If we have an 'e', but not filled any bcd string, then exit with fldz
+				asm {
+					fldz
+				}
+				pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+				return(r0);
+			}
+			// Alrightly, we have something in our bcd string
+			// So we just skip our 'e char and exit
+			r9 = 0;
+		} else {
+			// We have a '.' or a number or NULL
+			if(r15 == r2){
+				// Got a NULL, so exit our loop
+				r9 = 0;
+				// But lets check our bcd count, if zero then exit
+				if(r3 == r2){
+					// If we have an 'e', but not filled any bcd string, then exit with fldz
+					asm {
+						fldz
+					}
+					pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+					return(r0);
+				}
+			} else {
+				// Should have a '.' or a Number
+				r10 = CHAR_STOP;
+				if (r15 == r10){
+					r12 = 1;
+					r0 = r0 + 1;
+					r15b = [r0];
+					// Get our next char.
+				} else {
+					// we gotta have a number;
+					r15 = r15 - CHAR_0;
+					// r15 normalised
+					r11 = 10;
+					if (r15 >= r10){
+						// exit with error....
+						asm {
+							fldz
+						}
+						pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+						return(r0);
+					}
+					if(r8){
+						// We've already processed a number, so skip a lot of tests
+						[r5+r3] = r15b;	// insert our number into the string
+						r3 = r3 + 1;
+						if(r12){
+							// Adjust the exponent
+							r13 = r13 + 1;
+						}
+					} else {
+						// If zero, then skip else process and set r8 = 1;
+						if(r15){
+							r8 = 1;
+							[r5+r3] = r15b;	// insert our number into the string
+							r3 = r3 + 1;
+							if(r12){
+								// Adjust the exponent
+								r13 = r13 + 1;
+							}
+						} else {
+							r13 = r13 + 1;
+						}
+					}
+					r11 = 18;
+					if(r3 >= r11){
+						// if we've filled our bcd string, then exit.
+						r9 = 0;
+						// Now scan forward to 'e' or NULL
+						r11 = 1;
+						while(r11){
+							r0 = r0 + 1;
+							r10 = r10 ^ r10;
+							r10b = [r0];
+							r1 = CHAR_NUL;
+							if(r10 == r1){
+								r11 = 0;
+							}
+							r1 = CHAR_e;
+							if(r10 == r1){
+								r11 = 0;
+							}
+						}
+						r15 = r10; // store the final char.
+					} else {
+						r0 = r0 + 1;
+						r15b = [r0];
+					}
+				}
+			}
+		}
+	}
+	// If here, we have a bcd string, and r15b = 'e' or NULL.
+	// and [r0] points to this char.
+	_atof_exp = r13;  // Save our inital exponent
+	r1 = CHAR_e;
+	r9 = 0;
+	if(r15 == r1){
+		// If our character was an e, we have an exponent, process as normal.
+		r0 = r0 + 1;
+		r15b = [r0];
+		r1 = CHAR_MINUS;
+		if (r15 == r1){
+			_atof_expisneg = 1;
+			r0 = r0 + 1;
+		}
+		r1 = CHAR_PLUS;
+		r15b = [r0];
+		// If first char a +
+		if (r15 == r1){
+			_atof_expisneg = 0;
+			r0 = r0 + 1;
+		}
+		// Now we should have our numbers, so a simple
+		// atoi() should be enough (we have a custom version)
+		r9 = atof_atoi();
+		r11 = _atof_expisneg;
+		if (r11){
+			-r9;
+		};
+	}
+	r9 = r9 - r13;
+
+	_atof_exp = r9;
+	atof_clean_bcd();
+	r4 = _atof_exp;
+	r10 = 4914;  // r4 should be -4914 < r4 < 4914
+	if(r4 ~> r10){
+		// exit with error....
+		asm {
+			fldz
+		}
+		pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+		return(r0);
+	}
+	-r10;
+	if(r4 ~< r10){
+		// exit with error....
+		asm {
+			fldz
+		}
+		pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+		return(r0);
+	}
+	// r0 = pointer to bcd, r1 = pointer to exp
+	r0 = &_atof_packed_bcd;
+	r1 = &_atof_exp;
+	atof_core();
+	r1 = _atof_isneg;
+	if(r1){
+		asm {
+			fchs;
+		}
+	}
+	pop r15, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1, r0;
+	return(r0);
+}
+
+// *******************************************************
+//
+// end atof() related code
+//
+// *******************************************************
+
+
+
+// *******************************************************
+//
+// ftoa() related code
+//
+// *******************************************************
+
+
+proc ftoa_itoa(dest_ptr, value ){
+	push r1, r2, r3, r4, r5;
+	r5 = r4;
+	r0 = r2; 			    // r0 = 0 - Our running value
+	r1 = 10;				// r1 = 10 - Our divisor, r3 = remainder.
+	r2 = r2 ^ r2;			// r2 = 0 - Number of characters in buffer
+	r4 = r4 ^ r4;			// r4 = 0 - Number of characters written to buffer
+	
+	ftoa_itoa_puti2();
+	
+	r0 = 0;
+	[r5] = r0; // Null terminate the string
+
+	pop r5, r4, r3, r2, r1;
+}
+
+proc ftoa_itoa_puti2(){
+	r3 = r3 ^ r3;		// r3 = 0;
+	r0 = r0 / r1;		// r0 = quotient, r3 = remainder.
+	r3 = r3 + CHAR_0;	// r3 -> ASCII
+	if (r0){
+		push r3;
+		ftoa_itoa_puti2();
+		pop r3;
+	}
+	[r5] = r3b;
+	r5 = r5 + 1;
+	r4 = r4 + 1;
+}
+
+proc ftoa_core(){
+	// expects fp0 to contain a number
+	// r0 pointer to packed bcd buffer (should be 24bytes in length)
+	// returns
+	// r0 = bcd string pointer
+	// r1 = is neg?
+	// r2 = exp (signed)
+	
+	// r0 = bcd string pointer
+	// r1 = is fp0 neg?
+	// r2 = exponent
+	// r3 = loop count
+	
+	r1 = 0;
+	r2 = r1;
+	r3 = r1;
+	r3 = r1;
+	// Check if fp0 is zero...
+	asm {
+		fldz;
+	}
+	if(fp0 == fp1){
+		[r0]    = fp0;
+		[r0]    = fp0;
+		[r0]    = 0h;
+		[r0+4]  = 0h;
+		[r0+8]  = 0h;
+		[r0+12] = 0h;
+		[r0+16] = 0h;
+		r1 = 0;  // Positive value
+		r2 = 0;  // No exponent
+		return(r0);
+	}
+	asm{
+		// Set rounding mode;
+		fstcw [_B0_SaveFPUCW] ;// Modify the control word to truncate when rounding.
+		fstcw [_B0_MaskedFPUCW];
+		or word [_B0_MaskedFPUCW], 0c00h ;
+		fldcw [_B0_MaskedFPUCW];
+	}
+	// is our number a negative?
+	if(fp0 > fp1){
+		r1 = 1;
+		asm {
+			fxch
+			fabs
+			fxch
+		}
+	} else {
+		r1 = 0;
+	}
+
+	[r0] = fp0;
+	asm{
+		fld1;
+	}
+		
+	if(fp0 > fp1){
+		// our number is smaller than 1, so increment until we get to between 0 and 9
+		[r0] = fp0;
+		fp0 = 10;
+		while (fp0 >= fp1){
+			fp1 = fp1 * fp0;
+			r2 = r2 - 1;
+		}
+		fp1 = fp1 / fp0;
+		r2 = r2 + 1;
+	} else {
+		// our number is larger than 1, so decrement until we get to between 0 and 9
+		[r0] = fp0;
+		fp0 = 10;
+		while (fp0 <= fp1){
+			fp1 = fp1 / fp0;
+			r2 = r2 + 1;
+		}
+	}
+	// Now adjust fp0 * (10 ^ 18)
+	r3 = 17;
+	while (r3){
+		fp1 = fp1 * fp0;
+		r3 = r3 - 1;
+	}
+	[r0] = fp0;	
+	asm{
+		fbstp [r0];
+	}
+	return(r0);
+}
+
+proc ftoa(ftoa_str){
+	push r0, r1, r2, r3, r4, r5;
+	r0 = &_ftoa_packed_bcd;
+	ftoa_core();
+	// r0 = our bcd buffer
+	// r1 = is neg or pos?
+	// r2 = our exp.
+	
+	// r3 = tmp reg
+	// r4 = target string
+	
+	r4 = ftoa_str;
+	r4 = r4 + 2;  // Skip lead of string
+	if(r1){
+		r3 = CHAR_MINUS;
+		[r4] = r3b;
+		r4 = r4 + 1;
+	}
+	r1 = 0;
+	r1b = [r0+8];
+	r3 = r1;
+	r1 = r1 >> 4;
+	r1 = r1 + CHAR_0;
+	[r4] = r1b;
+	r1 = CHAR_STOP;
+	[r4+1] = r1b;
+	r3 = r3 && 0fh;
+	r3 = r3 + CHAR_0;
+	[r4+2] = r3b;
+	r4 = r4 + 3;
+	
+	r5 = 8;
+	while(r5){  // Now do remaining characters
+		r1 = 0;
+		r1b = [r0+r5-1];
+		r3 = r1;
+		r1 = r1 && 0f0h;
+		r1 = r1 >> 4;
+		r1 = r1 + CHAR_0;
+		[r4] = r1b;
+		r3 = r3 && 0fh;
+		r3 = r3 + CHAR_0;
+		[r4+1] = r3b;
+		r4 = r4 + 2;
+		r5 = r5 - 1;		
+	}
+	if(r2){
+		// we have an exponent, so let's continue
+		r1 = CHAR_e;
+		[r4] = r1b;
+		r4 = r4 + 1;
+		r3 = 0;
+		if(r2 ~< r3){
+			// If exp is neg..
+			r1 = CHAR_MINUS;
+			[r4] = r1b;
+			r4 = r4 + 1;
+			-r2;
+		}
+		//Now just a simple itoa to finish up
+		ftoa_itoa();
+	} else {
+		r0 = 0;
+		[r4] = r0; // Null terminate the string
+	}
+	pop r5, r4, r3, r2, r1, r0;
+	return(r0);
+}
+
+// *******************************************************
+//
+// end ftoa() related code
+//
+// *******************************************************
+
+proc itoa(dest_ptr, value ){
+	push r1, r2, r3, r4, r5;
+	r5 = dest_ptr;
+	
+	r0 = value; 			// r0 = 0 - Our running value
+	r1 = 10;				// r1 = 10 - Our divisor, r3 = remainder.
+	r2 = r2 ^ r2;			// r2 = 0 - Number of characters in buffer
+	r4 = r4 ^ r4;			// r4 = 0 - Number of characters written to buffer
+	
+	[r5] = r2w;				// Number of characters in the string;
+	r5 = r5 + 2;			// Point to start of string
+	
+	if(r0 ~< r2){
+		//We have a negative value;
+		-r0;
+		r1 = CHAR_MINUS;
+		[r5] = r1b;
+		r5 = r5 + 1;
+		r1 = 10;
+		r4 = r4 + 1;
+	}
+	
+	itoa_puti2(r0);
+	
+	r5 = dest_ptr;
+	[r5+1] = r4b;			// Insert the string count
+	r0 = 0;
+	[r5+r4+2] = r0;
+	
+	pop r5, r4, r3, r2, r1;
+}
+
+proc itoa_puti2(value){
+	r3 = r3 ^ r3;		// r3 = 0;
+	r0 = r0 / r1;		// r0 = quotient, r3 = remainder.
+	r3 = r3 + 30h;		// r3 -> ASCII/UTF16
+	if (r0){
+		push r3;
+		itoa_puti2(r0);
+		pop r3;
+	}
+	[r5] = r3b;
+	r5 = r5 + 1;
+	r4 = r4 + 1;
+}
+
+proc itoah(string, value){
+	push r1, r2, r3, r4, r5, r15;
+	r5 = string;
+	r0 = value;
+
+	r3 = r3 ^ r3;			// r3 = 0 - Number of characters in string
+	r2 = 64;				// Shift amount
+	r4 = 57h;
+	r1 = CHAR_0;
+	[r5+2] = r1b;
+	r5 = r5 + 3;
+
+	while (r2){
+		r2 = r2 - 4;		// Shift amount
+		r1 = r0 >> r2;
+		r1 = r1 && 0fh;		// The next nibble
+		r15 = CHAR_0;
+		asm {
+			cmp r1, 09h
+			cmova r15, r4	// If our value is above 9, set a new increment amount
+		}
+		r1 = r1 + r15;
+		[r5] = r1b;			// Store our value;
+		r5 = r5 + 1;		// Increment our pointer
+		r3 = r3 + 1;		// Increment our count
+	}
+	r1 = CHAR_h;
+	[r5] = r1b;
+	r5 = string;
+	r3 = r3 + 2;
+	[r5+1] = r3b;			// Store count;
+	pop r15, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc tolower(character) {
+	push r1;
+	r0 = character;
+	r0 = r0 - CHAR_A;
+	r1 = CHAR_Z - CHAR_A;
+	if(r0 < r1){
+		r0 = r0 + CHAR_a;
+		pop r1;
+		return(r0);
+	} else {
+		pop r1;
+		r0 = character;
+		return(r0);
+	}
+};
+
+proc strcpy(dest, src) {
+	push r4, r5;
+	r5 = src;
+	r4 = dest;
+	r5 = r5 + 2;
+	r4 = r4 + 2;
+	r0 = r0 ^ r0;
+	r0b = [r5];
+	while(r0){
+		[r4] = r0b;
+		r4 = r4 + 1;
+		r5 = r5 + 1;
+		r0b = [r5];
+	}
+	[r4] = r0;
+	pop r5, r4;
+};
+
+proc _strcmp(src1, src2) { //rtns non-zero if different. src1 = ASCIIZ, src2 = b0.
+	push r1, r2, r3, r4, r5;
+	r4 = src1;
+	r5 = src2;
+	r5 = r5 + 2;
+	r2 = 1;			// Our count;
+	r0 = r0 ^ r0;
+	r1 = r0;
+	r3 = r0;
+	r0b = [r4];
+	r1b = [r5];
+	while (r0 == r1){
+		if (r0 == r3){
+			// We have reached the end of the string;
+			pop r5, r4, r3, r2, r1;
+			return(0);
+		}
+		r4 = r4 + 1;
+		r5 = r5 + 1;
+		r2 = r2 + 1;
+		r0b = [r4];
+		r1b = [r5];
+	}
+	r0 = r2;
+	//r0 = r0 - 1;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc strcmp(src1, src2) {	 //rtns non-zero if different. (first different character offset).
+	push r1, r2, r3, r4, r5;
+	r4 = src1;
+	r5 = src2;
+	r4 = r4 + 2;
+	r5 = r5 + 2;
+	r2 = 1;			// Our count;
+	r0 = r0 ^ r0;
+	r1 = r0;
+	r3 = r0;
+	r0b = [r4];
+	r1b = [r5];
+	while (r0 == r1){
+		if (r0 == r3){
+			// We have reached the end of the string;
+			pop r5, r4, r3, r2, r1;
+			return(0);
+		}
+		r4 = r4 + 1;
+		r5 = r5 + 1;
+		r2 = r2 + 1;
+		r0b = [r4];
+		r1b = [r5];
+	}
+	r0 = r2;
+	//r0 = r0 - 1;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+// Returns 1 if character is an Alpha, else 0
+proc isAlpha(character) {
+	push r0,r1;
+	r0 = character;
+	r1 = 41h; // 'A'
+	if (r0 >= r1){
+		r1 = 5ah; // 'Z'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	r1 = 61h; // 'a'
+	if (r0 >= r1){
+		r1 = 7ah; // 'z'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	r1 = 5fh; // '_'
+	if (r0 == r1){
+		pop r1,r0;
+		return(1);
+	}
+	pop r1,r0;
+	return(0);
+}
+
+//Returns 1 if character is a hexidecimal digit, else 0
+proc isXDigit(character){
+	push r0,r1;
+	r0 = character;
+	r1 = 41h; // 'A'
+	if (r0 >= r1){
+		r1 = 46h; // 'F'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	r1 = 61h; // 'a'
+	if (r0 >= r1){
+		r1 = 66h; // 'f'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	r1 = 30h; // '0'
+	if (r0 >= r1){
+		r1 = 39h; // '9'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	pop r1,r0;
+	return(0);
+}	
+
+//Returns 1 is character is a numerical digit, else 0
+proc isDigit(character){
+	push r0,r1;
+	r0 = character;
+	r1 = 30h; // '0'
+	if (r0 >= r1){
+		r1 = 39h; // '9'
+		if (r0 <= r1){
+			pop r1,r0;
+			return(1);
+		}
+	}
+	pop r1,r0;
+	return(0);
+}
+
+//Returns 1 if character is considered a whitespace character.
+proc isSpace(character){
+	push r0,r1;
+	r0 = character;
+	r1 = SP;
+	if (r0 == r1){
+		pop r1, r0;
+		return(1);
+	}
+	r1 = CR;
+	if (r0 == r1){
+		pop r1, r0;
+		return(1);
+	}
+	r1 = 0;
+	if (r0 == r1){
+		pop r1, r0;
+		return(1);
+	}
+	r1 = TAB;
+	if (r0 == r1){
+		pop r1, r0;
+		return(1);
+	}
+	r1 = LF;
+	if (r0 == r1){
+		pop r1, r0;
+		return(1);
+	}
+	pop r1, r0;
+	return(0);
+}
+
+// *--- ElfHash ---------------------------------------------------
+// *  The published hash algorithm used in the UNIX ELF format
+// *  for object files. Accepts a pointer to a string to be hashed
+// *  and returns an unsigned long.
+// *-------------------------------------------------------------*/
+//unsigned long ElfHash ( const unsigned char *name ){
+//	unsigned long h = 0, g;
+//	while ( *name ){
+//		h = ( h << 4 ) + *name++;
+//		g = h & 0xF0000000;
+//		if ( g )
+//			h ^= g >> 24;
+//		h &= ~g;
+//	}
+//	return h;
+//}
+
+//Dump of assembler code for function ElfHash:
+
+// Note: rbp - 24 = g
+// Note: rbp - 16 = h
+// Note: rbp - 8 = name
+
+//0x0000000000400468 <ElfHash+0>: push   rbp
+//0x0000000000400469 <ElfHash+1>: mov    rbp,rsp
+//0x000000000040046c <ElfHash+4>: mov    DWORD PTR [rbp-8],rdi
+//0x0000000000400470 <ElfHash+8>: mov    DWORD PTR [rbp-16],0x0
+//0x0000000000400478 <ElfHash+16>:        mov    rax,DWORD PTR [rbp-8]
+//0x000000000040047c <ElfHash+20>:        cmp    BYTE PTR [rax],0x0
+//0x000000000040047f <ElfHash+23>:        je     0x4004dc <ElfHash+116>
+//0x0000000000400481 <ElfHash+25>:        mov    rax,DWORD PTR [rbp-16]
+//0x0000000000400485 <ElfHash+29>:        mov    rdx,rax
+//0x0000000000400488 <ElfHash+32>:        shl    rdx,0x4
+//0x000000000040048c <ElfHash+36>:        mov    rax,DWORD PTR [rbp-8]
+//0x0000000000400490 <ElfHash+40>:        movzx  rax,BYTE PTR [rax]
+//0x0000000000400494 <ElfHash+44>:        lea    rax,[rdx+rax]
+//0x0000000000400498 <ElfHash+48>:        mov    DWORD PTR [rbp-16],rax
+//0x000000000040049c <ElfHash+52>:        lea    rax,[rbp-8]
+//0x00000000004004a0 <ElfHash+56>:        rex64 inc    DWORD PTR [rax]
+//0x00000000004004a3 <ElfHash+59>:        mov    rax,DWORD PTR [rbp-16]
+//0x00000000004004a7 <ElfHash+63>:        and    eax,0xf0000000
+//0x00000000004004ac <ElfHash+68>:        mov    DWORD PTR [rbp-24],rax
+//0x00000000004004b0 <ElfHash+72>:        rex64 cmp    DWORD PTR [rbp-24],0x0
+//0x00000000004004b5 <ElfHash+77>:        je     0x4004c9 <ElfHash+97>
+//0x00000000004004b7 <ElfHash+79>:        mov    rax,DWORD PTR [rbp-24]
+//0x00000000004004bb <ElfHash+83>:        mov    rdx,rax
+//0x00000000004004be <ElfHash+86>:        shr    rdx,0x18
+//0x00000000004004c2 <ElfHash+90>:        lea    rax,[rbp-16]
+//0x00000000004004c6 <ElfHash+94>:        xor    DWORD PTR [rax],rdx
+//0x00000000004004c9 <ElfHash+97>:        mov    rax,DWORD PTR [rbp-24]
+//0x00000000004004cd <ElfHash+101>:       mov    rdx,rax
+//0x00000000004004d0 <ElfHash+104>:       not    rdx
+//0x00000000004004d3 <ElfHash+107>:       lea    rax,[rbp-16]
+//0x00000000004004d7 <ElfHash+111>:       and    DWORD PTR [rax],rdx
+//0x00000000004004da <ElfHash+114>:       jmp    0x400478 <ElfHash+16>
+//0x00000000004004dc <ElfHash+116>:       mov    rax,DWORD PTR [rbp-16]
+//0x00000000004004e0 <ElfHash+120>:       leave  
+//0x00000000004004e1 <ElfHash+121>:       ret    
+
+// I've included in the original C code and it's disassembly to show
+// that my b0 implementation should produce the same result.
+
+// b0 compiled form:
+//_B0_ElfHash:
+//	push r1
+//	push r2
+//	push r3
+//	mov r0, 0
+//	mov r2, 0
+//	mov r1, 0
+//	mov r3, qword [r6+_B0_ElfHash_string2hash]
+//	mov r1b, [r3]
+//	test r1, r1
+//	je .B0_END_BLOCK_000031
+//	.B0_END_BLOCK_000030:
+//	shl r0, 4
+//	add r0, r1
+//	add r3, 1
+//	mov r2, r0
+//	and r2d, 0f0000000h 
+//	jz .B0_END_BLOCK_000033
+//	mov r1, r2
+//	shr r1, 24
+//	xor r0, r1
+//	.B0_END_BLOCK_000033:
+//	neg r2
+//	and r0, r2
+//	mov r1b, [r3]
+//	test r1, r1
+//	jne .B0_END_BLOCK_000030
+//	.B0_END_BLOCK_000031:
+//	pop r3
+//	pop r2
+//	pop r1
+//	ret
+
+proc ElfHash(string2hash){
+	push r1, r2, r3;
+	r0 = 0; 				// h
+	r2 = 0; 				// g
+	r1 = 0; 				// character from string;
+	r3 = string2hash; 	// location of our string;
+	r1b = [r3];			// get our character
+	while (r1){
+		r0 = r0 << 4;			// shift the value left
+		r0 = r0 + r1;			// add the character to the string
+		r3 = r3 + 1;				// increase our pointer to the string;
+		r2 = r0;
+		asm{	and r2d, 0f0000000h 	// Require 32bit LOGICAL AND instead of 64bit.
+}; 								// g = h & 0xF0000000;
+		if (%NOTZERO){			// if (g) 
+			r1 = r2 >> 24;
+			r0 = r0 ^ r1;		// h ^= g >> 24;
+		}
+		!r2;						// h &= ~g;
+		r0 = r0 && r2;
+		r1b = [r3];
+	}
+	pop r3, r2, r1;
+	return(r0);					// return h;
+};
+
+proc PrintHeader(){
+	echo_string(STDOUT, '\nb0 v');
+	r0 = &B0_VERSION;
+	echo_string(STDOUT, r0);
+	echo_string(STDOUT, '\nCopyright (C) 2005-2008, Darran Kartaschew.\nAll rights reserved.\n');
+	r0 = &B0_COPYRIGHT;
+	echo_string(STDOUT, r0);
+	echo_cr(STDOUT);
+	r0 = 1;
+	HeaderPrinted = r0;
+}
+
+proc PrintHelp(){
+	PrintHeader();
+	echo_string(STDOUT, '\nUsage: b0 [-v] [-W] [-?|-h|-l] [-f<type>] [-i<include>] [-!] [-DEBUG] [-UTF8] [-UTF16] -o<filename> <filename>\n');
+	echo_string(STDOUT, '\nWhere:\n\t-v\t\tDisplay Version Information\n');
+	echo_string(STDOUT, '\t-W\t\tDisable warnings during compilation\n');
+	echo_string(STDOUT, '\t-? or -h\tDisplay Help\n');
+	echo_string(STDOUT, '\t-l\t\tDisplay Software License\n');
+	echo_string(STDOUT, '\t-f<type>\tOuptut Format Type, \'elf\',\'elfo\', \'pe\' or \'dll\'accepted\n');
+	echo_string(STDOUT, '\t-i<include>\tInclude directories for libraries\n');
+	echo_string(STDOUT, '\t-!\t\tContinue to compile on error (DANGEROUS)\n');
+	echo_string(STDOUT, '\t-DEBUG\t\tDisplay Extremely Verbose Debugging Information\n');
+	echo_string(STDOUT, '\t-UTF8\t\tEncode strings as UTF8\n');
+	echo_string(STDOUT, '\t-UTF16\t\tEncode strings as UTF16\n');
+	echo_string(STDOUT, '\t-o<filename>\tOutput filename\n');
+	echo_string(STDOUT, '\t<filename>\tFile to compile\n');
+	echo_string(STDOUT, '\neg: B0 -felf -i./include -DEBUG myprog.b0\n');
+	exit(0);
+}	
+
+proc PrintLicense(){
+	echo_string(STDOUT,'BSD Licence\n-----------\n\nCopyright (C) 2000-2008, Darran Kartaschew.\nAll rights reserved.\n');
+	echo_string(STDOUT,'\nRedistribution and use in source and binary forms, with or without\n');
+	echo_string(STDOUT,'modification, are permitted provided that the following conditions are met:\n\n');
+	echo_string(STDOUT,'*  Redistributions of source code must retain the above copyright notice, \n');
+	echo_string(STDOUT,'   this list of conditions and the following disclaimer.\n\n'); 
+	echo_string(STDOUT,'*  Redistributions in binary form must reproduce the above copyright notice,\n');
+	echo_string(STDOUT,'   this list of conditions and the following disclaimer in the documentation\n');
+	echo_string(STDOUT,'   and/or other materials provided with the distribution.\n\n'); 
+	echo_string(STDOUT,'*  Neither the name of "B0" nor the names of its contributors may be used\n');
+	echo_string(STDOUT,'   to endorse or promote products derived from this software without specific\n');
+	echo_string(STDOUT,'   prior written permission.\n\n'); 
+	echo_string(STDOUT,'THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"\n');
+	echo_string(STDOUT,'AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE \n');
+	echo_string(STDOUT,'IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE \n');
+	echo_string(STDOUT,'ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE \n');
+	echo_string(STDOUT,'LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR \n');
+	echo_string(STDOUT,'CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF \n');
+	echo_string(STDOUT,'SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n');
+	echo_string(STDOUT,'INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN \n');
+	echo_string(STDOUT,'CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) \n');
+	echo_string(STDOUT,'ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n');
+	echo_string(STDOUT,'POSSIBILITY OF SUCH DAMAGE.\n\n');
+};
+
+proc echo_cr(handle){
+	r0 = handle;
+	echo_character(r0, CHAR_LF);
+}
+
+proc dhtoi(number){
+	//  isHex = r5;
+	//  value = r0;
+	push r1, r2, r4, r5;
+	
+	//start_number = number;	// Save the string pointer.
+	r4 = number;
+	r4 = r4 + 2;		// Skip the size marker.
+	push r4;
+	r5 = 0;
+	r0 = r5;
+	//while (*number){
+	r1b = [r4];
+	r1 = r1 && 0ffh;
+	while (r1){
+		//if (((*number >= 'a') && (*number <= 'f')) || (*number == 'h')) {
+		//	isHex = 1;
+		//}
+		r1 = tolower(r1);
+		r1 = r1 - 61h;  // normalise so that 'a' == 0
+		r2 = 5h;			// a = 0, b = 1, c = 2, d = 3, e = 4, f = 5, g = 6, h = 7.
+		if (r1 <= r2){
+			r5 = 1;
+		}
+		r2 = 7h;
+		if (r1 == r2){
+			r5 = 1;
+		}
+		
+		//*number++;
+		r4 = r4 + 1;
+		r1b = [r4];
+		r1 = r1 && 0ffh;
+	}
+	//number = start_number; // Restore our pointer.
+	pop r4;
+	
+	//if (isHex) {
+	if (r5){
+		//while (*number){
+		r1b = [r4];
+		r1 = r1 && 0ffh;
+		while (r1){
+			r1 = tolower(r1);
+			//if (*number != 'h') {
+			r2 = 68h;
+			if (r1 != r2){
+				//	value = value << 4;
+				push r0, r1;
+				r1 = 0fh;
+				r1 = r1 >>> 4;
+				r0 = r0 && r1;
+				if(r0){
+					abort_b0('Number cannot be larger than 64bits');
+				}
+				pop r1, r0;
+				r0 = r0 << 4;
+				//	if (*number < 'a') {
+				r2 = 61h;
+				if (r1 < r2){
+					// value += (*number - '0');
+					r1 = r1 - 30h;
+					r0 = r0 + r1;
+				} else {
+					// value += (*number - 'a' + 10);
+					r1 = r1 - 87;
+					r0 = r0 + r1;
+				}
+			//}
+			} else {
+				// h should be the last item in the string;
+				r1 = 0;
+				r1b = [r4+1];
+				if(r1){
+					abort_b0('Malformed number');
+				}
+			}
+			//*number++;
+			r4 = r4 + 1;
+			r1b = [r4];
+			r1 = r1 && 0ffh;
+		}
+	} else {
+		//while (*number){
+		r1b = [r4];
+		r1 = r1 && 0ffh;
+		while (r1){
+			//value *= 10;
+			r2 = r0;  //Save our orginal result
+			r0 = &[r0 + r0 * 4];
+			r0 = r0 << 1;
+			if(r0 < r2){
+				abort_b0('Number cannot be larger than 64bits');
+			}
+			//value += (*number - '0');
+			r1 = r1 - 30h; //'0'
+			r0 = r0 + r1;
+			if(%CARRY){
+				abort_b0('Number cannot be larger than 64bits');
+			}
+			//*number++;
+			r4 = r4 + 1;
+			r1b = [r4];
+			r1 = r1 && 0ffh;
+		}
+	}
+	//if(DEBUG)
+	//	printf("dhtoi = %d\n", value);
+	r1 = DEBUG;
+	if (r1){
+		push r0;
+		r1 = r0;
+		echo_string(STDOUT, 'dhtoi = ');
+		echo_hex(STDOUT, r1);
+		echo_cr(STDOUT);
+		pop r0;
+	}
+	//return value;
+	pop r5, r4, r2, r1;
+	return(r0);
+}
+
+proc DisplayLabelInfo(){
+	//printf("Variable Info:\n  v_base = 0x%lx\n", v_base);
+	echo_string(STDOUT, 'Variable Info:\n  v_base = ');
+	r0 = v_base;
+	echo_hex(STDOUT, r0);
+	//printf("  v_isStruc     = 0x%x\n", v_isStruc);
+	echo_string(STDOUT, '\n  v_isStruc     = ');
+	r0 = v_isStruc;
+	echo_hex(STDOUT, r0);
+	//printf("  v_offset      = 0x%lx\n", v_offset);
+	echo_string(STDOUT, '\n  v_offset      = ');
+	r0 = v_offset;
+	echo_hex(STDOUT, r0);
+	//printf("  v_offset_type = %c\n", v_offset_type);
+	echo_string(STDOUT, '\n  v_offset_type = ');
+	r0 = v_offset_type;
+	echo_character(STDOUT, r0);
+	//printf("  v_size        = 0x%x\n", v_size);
+	echo_string(STDOUT, '\n  v_size        = ');
+	r0 = v_size;
+	echo_hex(STDOUT, r0);
+	//printf("  v_target      = 0x%x\n", v_target);
+	echo_string(STDOUT, '\n  v_target      = ');
+	r0 = v_target;
+	echo_hex(STDOUT, r0);
+	//printf("  v_global      = 0x%x\n", v_global);
+	echo_string(STDOUT, '\n  v_global      = ');
+	r0 = v_global;
+	echo_hex(STDOUT, r0);
+	//printf("  v_index       = 0x%x\n", v_index);	
+	echo_string(STDOUT, '\n  v_index       = ');
+	r0 = v_index;
+	echo_hex(STDOUT, r0);
+	echo_cr(STDOUT);
+}
+
+//proc old_v_size_is_p2(_size){
+//	push r1;
+//	r0 = _size;
+//	r1 = 1; if(r0 == r1){ pop r1; return(0); }
+//	r1 = 2; if(r0 == r1){ pop r1; return(1); }
+//	r1 = 4; if(r0 == r1){ pop r1; return(2); }
+//	r1 = 8; if(r0 == r1){ pop r1; return(3); }
+//	r1 = 16; if(r0 == r1){ pop r1; return(4); }
+//	r1 = 32; if(r0 == r1){ pop r1; return(5); }
+///	r1 = 64; if(r0 == r1){ pop r1; return(6); }
+//	r1 = 128; if(r0 == r1){ pop r1; return(7); }
+//	r1 = 256; if(r0 == r1){ pop r1; return(8); }
+//	r1 = 512; if(r0 == r1){ pop r1; return(9); }
+//	r1 = 1024; if(r0 == r1){ pop r1; return(10); }
+//	r1 = 2048; if(r0 == r1){ pop r1; return(11); }
+//	r1 = 4096; if(r0 == r1){ pop r1; return(12); }
+//	r1 = 8192; if(r0 == r1){ pop r1; return(13); }
+//	r1 = 16384; if(r0 == r1){ pop r1; return(14); }
+//	r1 = 32768; if(r0 == r1){ pop r1; return(15); }
+//	r1 = 65536; if(r0 == r1){ pop r1; return(16); }
+//	r1 = 131072; if(r0 == r1){ pop r1; return(17); }
+//	r1 = 262144; if(r0 == r1){ pop r1; return(18); }
+//	r1 = 524288; if(r0 == r1){ pop r1; return(19); }
+//	r1 = 1048576; if(r0 == r1){ pop r1; return(20); }
+//	r1 = 2097152; if(r0 == r1){ pop r1; return(21); }
+//	r1 = 4194304; if(r0 == r1){ pop r1; return(22); }
+//	r1 = 8388608; if(r0 == r1){ pop r1; return(23); }
+//	r1 = 16777216; if(r0 == r1){ pop r1; return(24); }
+//	r1 = 33554432; if(r0 == r1){ pop r1; return(25); }
+//	r1 = 67108864; if(r0 == r1){ pop r1; return(26); }
+//	r1 = 134217728; if(r0 == r1){ pop r1; return(27); }
+//	r1 = 268435456; if(r0 == r1){ pop r1; return(28); }
+//	r1 = 536870912; if(r0 == r1){ pop r1; return(29); }
+//	r1 = 1073741824; if(r0 == r1){ pop r1; return(30); }
+//	r1 = 2147483648; if(r0 == r1){ pop r1; return(31); }
+//	pop r1; return(0);
+//}
+
+proc v_size_is_p2(_size){
+	push r1;
+	r0 = r0 ^ r0;  				// Zero our count
+	r1 = _size;					// Get our variable size
+	while(r1){					// While our size is still above 0
+		r1 = r1 >> 1;			// Shift it to the right 1 bit
+		if(%CARRY){				// If the carry flag is set then we encountered a bit
+			if(r1){				// If there are still other bits set, then our size isn't power of 2
+				pop r1;	
+				r0 = r0 ^ r0;
+				return(r0);		// Return 0 in that case
+			} else {
+				r0 = r0 - 1;	// Since this is the only bit, do the 1 off adjustment
+								// This is becuase we want the number of 0's before our 1,
+								// not the position of the 1.
+			}
+		}
+		r0 = r0 + 1;			// Increase our loop count
+								// if there are no more bits in our size, we exit the loop
+	}
+	pop r1;
+	return(r0);					// Exit with our loop count.
+};
+
+
+proc insert_token_stack_number(_string){
+	f64 fp_val;
+	push r1, r2, r3, r4, r5;
+	r5 = _string;
+	r0 = 0;
+	r1 = CHAR_STOP;
+	r2 = r0;	// Our count;
+	r3 = r0;
+	r4 = r0;	// isFP?
+	r3b = [r5+r2];
+	while(r3){
+		if(r3 == r1){
+			r4 = 1;
+		}
+		r2 = r2 + 1;
+		r3b = [r5+r2];
+	}
+	if(r4){
+		// We have a float
+		r5 = _string;
+		r5 = r5 - 2;
+		//echo_string(STDOUT, '\nOutput ftoa(): ');
+		//echo_string(STDOUT, r5);
+		//echo_string(STDOUT, ' : ');
+		atof(r5);
+		insert_token_stack(TOKEN_NUM_DECIMAL);
+		fp_val = fp0;
+		r0 = &fp_val;
+		r1 = [r0];
+		//echo_hex(STDOUT, r1);
+		//echo_cr(STDOUT);
+		insert_token_stack(r1);
+	} else {
+		r5 = _string;
+		r5 = r5 - 2;
+		r1 = dhtoi(r5);
+		insert_token_stack(TOKEN_NUM_INTEGER);
+		insert_token_stack(r1);
+	}
+		
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}

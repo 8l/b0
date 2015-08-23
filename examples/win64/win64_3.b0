@@ -1,0 +1,281 @@
+// Application "reading argc, argv" for Windows;
+
+#COMPILER_OPTION UTF8 DLL 'win64_3.dll';
+#define LOCAL_HEAP = 2000h;
+
+#define STD_INPUT_HANDLE       = -10;
+#define STD_OUTPUT_HANDLE      = -11;
+#define STD_ERROR_HANDLE       = -12;
+
+#define STDIN  = 0;
+#define STDOUT = 1;
+#define STDERR = 2;
+
+lib 'std_char.b0';
+
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+extern GetStdHandle() as 'GetStdHandle' in KERNEL32;
+extern WriteFile() as 'WriteFile' in KERNEL32;
+extern GetCommandLineW() as 'GetCommandLineW' in KERNEL32;
+extern LocalFree() as 'LocalFree' in KERNEL32;
+extern AttachConsole() as 'AttachConsole' in KERNEL32;
+
+extern CommandLineToArgvW() as 'CommandLineToArgvW' in SHELL32 as 'SHELL32.DLL';
+
+
+m8[256] env_buffer;
+m64 _stdin;
+m64 _stdout;
+m64 _stderr;
+
+proc __Init_Win64(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	// First we a GUI app, so let's attach to the parent console
+	r2 = 0;
+	r2d = -1;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call AttachConsole();
+	r7 = r6;
+	pop r6;	
+	r2 = STD_INPUT_HANDLE;
+	r7 = r7 - 20h;
+	call GetStdHandle();
+	r7 = r7 + 20h;
+	_stdin = r0;
+	r2 = STD_OUTPUT_HANDLE;
+	r7 = r7 - 20h;
+	call GetStdHandle();
+	r7 = r7 + 20h;
+	_stdout = r0;
+	r2 = STD_ERROR_HANDLE;
+	r7 = r7 - 20h;
+	call GetStdHandle();
+	r7 = r7 + 20h;
+	_stderr = r0;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc strlen(string) {
+	push r1, r2;
+	r1 = string;
+	r1 = r1 + 2;
+	r0 = r0 ^ r0;		// our count;
+	r2 = r0;			// our char;
+	r2b = [r1+r0];
+	while (r2){
+		r0 = r0 + 1;
+		r2b = [r1+r0];
+	}
+	//r0 = r0 + 1;
+	pop r2, r1;
+	return(r0);
+}
+
+proc sys_write(_handle, _ptr, _size) as 'echo2'{
+	m64 buffer;
+	r2 = _handle;
+	r0 = STDIN;
+	if(r2 == r0){
+		r2 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r2 == r0){
+			r2 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r2 == r0){
+				r2 = _stderr;
+			}
+		}
+	}	
+	r3 = _ptr;
+	r3 = r3 + 2;
+	r8 = _size;
+	r9 = &buffer;
+	r0 = 0;
+	push r0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	call WriteFile();
+	r7 = r7 + 20h;
+	r7 = r6;
+	pop r6;
+	pop r2;
+	return(r0);
+}
+
+proc echo_string(handle, string) as 'echo' {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = string;
+	r3 = strlen(r1);
+	r2 = handle;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc itoa(dest_ptr, value ) as 'ACa' {
+	push r1, r2, r3, r4, r5;
+	r5 = dest_ptr;
+	
+	r0 = value; 			// r0 = 0 - Our running value
+	r1 = 10;				// r1 = 10 - Our divisor, r3 = remainder.
+	r2 = r2 ^ r2;			// r2 = 0 - Number of characters in buffer
+	r4 = r4 ^ r4;			// r4 = 0 - Number of characters written to buffer
+	
+	[r5] = r2w;				// Number of characters in the string;
+	r5 = r5 + 2;			// Point to start of string
+	
+	if(r0 ~< r2){
+		//We have a negative value;
+		-r0;
+		r1 = CHAR_MINUS;
+		[r5] = r1b;
+		r5 = r5 + 1;
+		r1 = 10;
+		r4 = r4 + 1;
+	}
+	
+	itoa_puti2(r0);
+	
+	r5 = dest_ptr;
+	[r5+1] = r4b;			// Insert the string count
+	r0 = 0;
+	[r5+r4+2] = r0;
+	
+	pop r5, r4, r3, r2, r1;
+}
+
+proc itoa_puti2(value) as 'A'{
+	r3 = r3 ^ r3;		// r3 = 0;
+	r0 = r0 / r1;		// r0 = quotient, r3 = remainder.
+	r3 = r3 + 30h;		// r3 -> ASCII/UTF16
+	if (r0){
+		push r3;
+		itoa_puti2(r0);
+		pop r3;
+	}
+	[r5] = r3b;
+	r5 = r5 + 1;
+	r4 = r4 + 1;
+}
+
+proc echo_integer(handle, integer)  as 'Ac' {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] int_string;
+	r0 = &int_string;
+	r1 = integer;
+	itoa(r0, r1);
+	r0 = &int_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+// ************************************************
+//
+// Start testing code
+//
+// ************************************************
+
+m64 pArgc = 0;
+m64 pArgv = 0;
+
+
+m64 szArglist;
+m64 nArgs;
+m64[256] __argv;			// Allow upto argc to get up to 256.
+m8[65536] __argv_strings;	// The actual command line strings;
+
+
+proc SetArgCV() as 'Main' {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;	
+	r7 = r7 - 20h;
+	call GetCommandLineW();  // Returns a UNICODE string NOT ANSI!!!!
+	r7 = r7 + 20h;
+
+	r7 = r7 - 20h;
+	r2 = r0;  // Pass our rtn'd parameter from above to this call
+	r3 = &nArgs;
+	call CommandLineToArgvW();
+	r7 = r7 + 20h;
+
+	szArglist = r0;
+	// nArgs set by above function call;
+
+	//Now convert all those UCS-2 strings to ANSI
+
+	r15 = &__argv_strings;
+	r14 = szArglist;
+	r13 = nArgs;
+	r1 = 0;
+	__argv[r1] = r15;
+	while(r1 < r13){
+		r12 = [r14+r1*8];	// pointer to the first string;
+		r11 = 0;
+		r11w = [r12];		// Get our first char
+		while(r11){
+			// Keep going until we get a NULL character
+			[r15] = r11b;
+			r15 = r15 + 1;
+			[r15] = 0;
+			r12 = r12 + 2;
+			r11 = 0;
+			r11w = [r12];		// Get our first char
+		}
+		r1 = r1 + 1;
+		r15 = r15 + 1;
+		__argv[r1] = r15;
+	}
+	
+	// Clear the buffer than Windows allocated for us.
+	r7 = r7 - 20h;
+	r2 = szArglist;
+	call LocalFree();
+	r7 = r7 + 20h;
+
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	r4 = nArgs;
+	r5 = &__argv;
+	//r5 = szArglist;
+};
+
+proc main() as 'C' {
+	__Init_Win64();
+	echo_string(STDOUT, 'test argc, argv application\n');
+	SetArgCV();
+	pArgc = r4;
+	pArgv = r5;
+	if(r4){
+		echo_string(STDOUT, 'Argc = ');
+		echo_integer(STDOUT, r4);
+		echo_string(STDOUT, '\nArgv = ');
+		echo_integer(STDOUT, r5);
+		echo_string(STDOUT, '\n');
+		r1 = 0;		// our count;
+		while(r4 > r1){
+			echo_string(STDOUT, 'Argv[');
+			echo_integer(STDOUT, r1);
+			echo_string(STDOUT, '] = ');
+			r2 = [r5+r1*8];
+			r2 = r2 - 2;
+			echo_string(STDOUT, r2);
+			echo_string(STDOUT, '\n');
+			r1 = r1 + 1;
+		}
+	} else {
+		echo_string(STDOUT, 'CommandLineToArgvW failed\n');
+	}
+	exit(0);
+}

@@ -1,0 +1,55 @@
+// CGI "Hello World" for Linux based http servers;
+
+// This is an example of using b0 for CGI programming on Linux!
+// Yes this means creating dynamic websites using CGIs written
+// in b0 is possible. 
+
+// compile using: b0 -felf -UTF8 cgi1.b0 && fasm cgi1.asm b0.cgi
+
+// Copy into your cgi directory, and give it a shot!
+// (This cgi has been tested on my system, using webfsd as the http server).
+// This is really just a proof of concept that is works, but for
+// further advancement, I highly recommend that you read up on CGI
+// programming using C and Assembler. (See you don't need PHP or Perl
+// or something else for web development!).
+
+#define LOCAL_HEAP = 100000h;	// Allocate 1MB for local thread heap;
+
+m8 http_header = 'Content-Type: text/html\n\n';
+m8 my_string = '<html><head><title>b0 CGI Example</title></head><body><h1>Hello World from a b0 CGI?</h1></body></html>\n\0';
+
+proc memInit(){
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;		// Get top of memory
+	r0 = 045;		// sys_brk
+	syscall;
+	r15 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;		// set new top of bss
+	return(r15);
+}
+
+proc echo(_ptr, _size){
+	r0 = 4;			// sys_write
+	r1 = 1;			// file handle = stdout
+	r2 = _ptr;		// pointer to string to print
+	r3 = _size;		// String size
+	syscall;
+}
+
+proc main(){
+	r6 = memInit();		// Setup local variable buffer!
+	r0 = &http_header;
+	r1 = 0;
+	r1b = [r0];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	r0 = &my_string;
+	r1  = 0;
+	r1b = [r0];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	exit(0);
+}
+

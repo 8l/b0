@@ -1,0 +1,54 @@
+﻿// Application "Hello World" for Windows;
+
+#COMPILER_OPTION UTF16 PE;
+#define LOCAL_HEAP = 20000h;
+
+lib 'std_char.b0';
+
+extern MessageBox() as 'MessageBoxW' in USER32 as 'USER32.DLL';
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+
+m16 my_string = 'Hello World from b0™ :)';
+m16 my_string2 = 'Hello again!';
+m16 my_string3 = 'And now you can\'t get rid of me!';
+m16 caption = 'b0 Win64 Application';
+
+proc echo(window_caption, message){
+	push r1;
+	r9 = 01h;
+	r8 = window_caption;
+	r8 = r8 + 4; // remove length markers from string
+	r3 = message;
+	r3 = r3 + 4; // remove length markers from string
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call MessageBox();
+	r7 = r6;
+	pop r6;
+	pop r1;
+}
+
+proc main(){
+	r0 = &my_string;
+	r1 = &caption;
+	echo(r1, r0);
+	r0 = &my_string2;
+	r1 = &caption;
+	echo(r1, r0);
+	r1 = 1;
+	while(r1){
+		r0 = &my_string3;
+		r1 = &caption;
+		echo(r1, r0);
+	}
+	exit(0);
+}
+

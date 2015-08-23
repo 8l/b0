@@ -1,0 +1,33 @@
+#define AppIcon 1
+#define DocIcon 2
+#define IDR_VERSION 1
+AppIcon ICON DISCARDABLE "b0.ico"
+DocIcon ICON DISCARDABLE "b0_doc.ico"
+IDR_VERSION VERSIONINFO
+FILEVERSION 0,0,23,0
+PRODUCTVERSION 0,0,23,0
+FILEOS 0x00000004
+FILETYPE 0x00000001
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "FFFF0000"
+    BEGIN
+      VALUE "FileVersion", "0.0.23\0"
+      VALUE "ProductVersion", "0.0.23\0"
+      VALUE "CompanyName", "\0"
+      VALUE "FileDescription", "b0 Compiler\0"
+      VALUE "InternalName", "b0.exe\0"
+      VALUE "LegalCopyright", "Darran Kartaschew 2000-2008\0"
+      VALUE "License", "BSD License\0"
+      VALUE "OriginalFilename", "b0.exe\0"
+      VALUE "ProductName", "b0 Compiler\0"
+      VALUE "Comments", "b0 Compiler v0.0.23 for Windows x64"
+      VALUE "Build", "April 2008\0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0xFFFF, 0x0000
+  END
+END

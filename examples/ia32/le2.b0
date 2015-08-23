@@ -1,0 +1,55 @@
+// Application "Hello World" for Linux;
+
+// compile using: b0 le2.b0 && fasm le2.asm le
+
+#COMPILER_OPTION ELF UTF8;
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+m8 string1 = 'Unicode test application\n';
+m8 string2 = 'TM = ™ \n';
+m8 string3 = 'Symbols: {Insert some symbols here for the demo}\n';
+
+proc memInit(){
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;			// Get top of memory
+	r0 = 045;			// sys_brk
+	syscall;
+	r3 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;			// set new top of bss
+	return(r3);
+}
+
+proc echo(_ptr, _size){
+	r0 = 4;						// sys_write
+	r1 = 1;						// file handle = stdout
+	r2 = _ptr;					// pointer to string to print
+	r3 = _size;					// String size
+	syscall;
+}
+
+proc main(){
+	r6 = memInit();				// Setup local variable buffer!
+	
+	r0 = &string1;
+	r1 = r1 ^ r1;
+	r1b = [r0+1];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	
+	r0 = &string2;
+	r1 = r1 ^ r1;
+	r1b = [r0+1];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	
+	r0 = &string3;
+	r1 = r1 ^ r1;
+	r1b = [r0+1];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	
+	exit(0);
+}
+

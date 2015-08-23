@@ -1,0 +1,35 @@
+// Application "Hello World" for libc systems;
+
+#COMPILER_OPTION UTF8;
+
+lib 'b0_libc.b0';
+m64 argc;
+m64 argv;
+
+proc main(){
+	r6 = memInit();
+	argc = r4;
+	argv = r5;
+	__Init_libc();
+	echo_string(STDOUT, 'This string has just been printed by glibc/fprintf()\n');
+	fp0 = 3.142;
+	echo_float(STDOUT);
+	echo_string(STDOUT, '\n');
+	r1 = 0;
+	r3 = argc;
+	r15 = argv;
+	while (r1 < r3){
+		r2 = [r15+r1*8];
+		echo_string(STDOUT, '&argv[');
+		echo_hex(STDOUT, r1);
+		echo_string(STDOUT, '] = ');
+		echo_hex(STDOUT, r2);
+		echo_string(STDOUT, ' ; "');
+		r2 = r2 - 2;  // We do this as echo_string(); expects a b0 type string, but ignores the size bytes.
+		echo_string(STDOUT, r2);
+		echo_string(STDOUT, '"\n');
+		r1 = r1 + 1;
+	}
+	exit(0);
+}
+

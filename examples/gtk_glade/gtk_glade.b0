@@ -1,0 +1,175 @@
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+#COMPILER_OPTION UTF8 ELFO DISABLESTACKFRAME;
+
+extern gtk_init();
+extern gtk_main();
+extern g_print();
+extern calloc();
+extern glade_xml_new();
+extern glade_xml_signal_autoconnect();
+extern glade_xml_get_widget();
+extern g_signal_connect_data();
+extern gtk_main_quit();
+extern gtk_widget_show();
+
+
+m8 GLADE_FILE = 'gnome3.glade';
+
+m64 app_window = 0; 		//GtkWidget *app_window;          /* main application window widget */
+m64 gxml = 0;       		//GladeXML *gxml;                 /* glade xml file */
+
+m64 argc = 0;
+m64 argv = 0;
+
+// This is a wrapper for _calloc!
+proc memInit(){
+	push r4, r5;
+	r4 = LOCAL_HEAP;	// Let's get our local heap size
+	r5 = 1;
+	r0 = 0;
+	call calloc();
+	r15 = r0;
+	pop r5, r4;
+	return(r15);
+}
+
+proc delete_event_cb(){			//static gint delete_event_cb(GtkWidget* w, GdkEventAny* e, gpointer data)
+	push r6;
+	r6 = r7;
+        ///* callback for "delete" signal */
+        //g_print("main.c:delete_event_cb()\n");
+    r4 = 'delete_event_cb()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();
+    
+        //return 0;
+    pop r6;
+    return(0);
+}
+
+proc destroy_cb(){ //static gint destroy_cb(GtkWidget* w, GdkEventAny* e, gpointer data)
+	push r6;
+	r6 = r7;
+        ///* callback for "destroy" signal */
+        //g_print("main.c:destroy_cb()\n");  
+    r4 = 'destroy_cb()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();        
+        ///* quit application */
+        //gtk_main_quit();
+    r4 = 0;
+    r0 = 0;
+    call gtk_main_quit();
+
+    pop r6;
+    return(0);
+}
+
+proc main() as 'main'{
+
+	argc = r4;
+	argv = r5;
+
+	r6 = memInit();			// Setup local variable buffer!
+	push r6;
+	r6 = r7;
+
+    r4 = 0;
+    r5 = 0;
+    r0 = 0;
+    call gtk_init();
+    
+    r4 = 'gtk_init()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();
+
+    //    /* create GladeXML object and connect signals */
+    //    gxml = glade_xml_new (GLADE_FILE, NULL, NULL);
+
+    r4 = &GLADE_FILE;
+    r4 = r4 + 2;
+    r5 = 0;
+    r3 = r5;
+    r0 = r5;
+    call glade_xml_new();
+    gxml = r0;
+  
+    r4 = 'glade_xml_new()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();
+
+	//    glade_xml_signal_autoconnect (gxml);
+    r4 = gxml;
+    r0 = 0;
+    call glade_xml_signal_autoconnect();
+    
+    r4 = 'glade_xml_signal_autoconnect()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();    
+    
+        
+    //    /* get the app_window from the glade XML file */
+    //    app_window = glade_xml_get_widget (gxml, "app_window");
+    r4 = gxml;
+    r5 = 'app_window';
+    r5 = r5 + 2;
+    r0 = 0;
+    call glade_xml_get_widget();
+    app_window = r0;
+    
+    r4 = 'glade_xml_get_widget()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print();    
+                
+    //    /* Connect signals for termination of application */
+    //    g_signal_connect(G_OBJECT(app_window), "delete_event",G_CALLBACK(delete_event_cb), NULL);
+    r4 = app_window;
+    r5 = 'delete_event';
+    r5 = r5 + 2;
+    r3 = &delete_event_cb();
+    r2 = 0;
+    r8 = r2;
+    r9 = r2;
+    r0 = r2;
+    call g_signal_connect_data();    
+                
+    //    g_signal_connect(G_OBJECT(app_window), "destroy", G_CALLBACK(destroy_cb), NULL);
+    r4 = app_window;
+    r5 = 'destroy';
+    r5 = r5 + 2;
+    r3 = &destroy_cb();
+    r2 = 0;
+    r8 = r2;
+    r9 = r2;
+    r0 = r2;
+    call g_signal_connect_data();
+ 
+    r4 = 'g_signal_connect_data()\n';
+    r4 = r4 + 2;
+    r0 = 0;
+    call g_print(); 
+            
+    //    /* show the main window */
+    //   gtk_widget_show (app_window);
+    r4 = app_window;
+    r0 = 0;
+    call gtk_widget_show();
+ 
+    //    /* begin main GTK loop */
+    //    gtk_main ();
+
+	r0 = 0;
+	call gtk_main();      
+    
+    pop r6;
+    return(0);
+}
+
+
+

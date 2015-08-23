@@ -1,0 +1,503 @@
+// FreeBSD OS-specific system calls go here.
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+#define STDIN  = 00h;
+#define STDOUT = 01h;
+#define STDERR = 02h;
+
+#define CLOCKS_PER_SEC = 1000000;  //POSIX value
+
+//
+//
+//
+// If someone can show me a WORKING EXAMPLE of a mmap() syscall on AMD64 platform
+// I'll gladly STOP CALLING LIBC for this syscall!
+//
+//
+// PS. I was advised just to use libc, and don't bother using
+// direct kernel calls, as it's more portable!
+//
+//
+//
+
+extern mmap();
+extern munmap();
+
+//
+//
+//
+//
+//
+//
+
+struc gettime_clock {
+	m64 tv_sec;
+	m64 tv_usec;
+};
+
+gettime_clock[2] time_spec;
+
+proc _fgetc_orig(handle) {
+	m64 buffer;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = DEBUG;
+	if(r0){
+		echo_string(STDOUT, 'Read from File\n');
+	}
+
+	r0 = 03;		// Sys_read
+	r4 = handle;
+	r5 = &buffer;
+	r3 = 1;			// 1 byte;
+	syscall;
+	if(r0){
+		r2 = &buffer;
+		r0b = [r2];
+	} else {
+		r0 = EOF;
+	}
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fgetc(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = 0;
+	r2 = MAX_LIB_DEPTH;
+	r4 = handle;
+	r5 = 0;
+	while(r1<r2){
+		r3 = file[r1].handle;
+		push r2;
+		if(r3 == r4){
+			r5 = 1;
+			r1 = file_stack_ptr;
+			r2 = file[r1].filesize;
+			r3 = file[r1].buffer;
+			r4 = file[r1].buffer_offset;
+			if(r4 <= r2){
+				r15 = 0;
+				r15b = [r4+r3];	//get our char
+				r4 = r4 + 1;	// point to the next character
+				file[r1].buffer_offset = r4;	// save that value
+				r0 = DEBUG;
+				if(r0){
+					echo_string(STDOUT, 'Read from buffer\n');
+				}
+			} else {
+				r15 = EOF;
+			}
+			r1 = MAX_LIB_DEPTH;
+		}
+		pop r2;
+		r1 = r1 + 1;
+	}
+	r1 = 0;
+	if(r5 == r1){
+		// Use traditional fgetc if not buffered read operation
+		r4 = handle;
+		r15 = _fgetc_orig(r4);	
+	}
+	r0 = r15;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fclose(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 06;		// sys_close;
+	r4 = handle;
+	syscall;
+	
+	// now deallocate the buffer used if reading the file.
+	r1 = 0;
+	r2 = MAX_LIB_DEPTH;
+	r4 = handle;
+	while(r1<r2){
+		r3 = file[r1].handle;
+		if(r3 == r4){
+			push r1,r2;
+			// We have our file;
+			r4 = file[r1].buffer;
+			r5 = file[r1].filesize;
+			r0 = 73;		// munmap;
+			syscall;
+			pop r2,r1;
+			r1 = MAX_LIB_DEPTH;
+		}
+		r1 = r1 + 1;
+	}
+	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _remove(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 10;
+	r4 = string;
+	r4 = r4 + 2;
+	syscall;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _clock() {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 232;
+	r4 = 0;				// REALTIME for sys/time.h
+	r5 = &time_spec; 	// pointer to returned time structure.
+	syscall;
+	r0 = time_spec.tv_sec;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fopen(file2open, acl) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 05;
+	r4 = file2open;
+	r4 = r4 + 2;
+	r5 = acl;		//1102o = create/trunc   // 0000 = readonly
+	r3 = 0;
+	r3b = [r5+2];
+	r2 = CHAR_w;
+	if(r3 == r2){
+		//r5 = 242h; // Linux uses octal here
+		r5 = 602h;   // FreeBSD uses hex here...
+	} else {
+		r5 = 0000h;
+	}
+	//echo_character(STDOUT, r3);
+	r3 = 420;  //  -rw-r--r-- file permission.
+	syscall;
+	if (%CARRY){
+		r0 = 0;
+	} else {
+		r1 = 0;
+		if (r1 == r0){
+			// Not carry, but no file handle, try reopening file without truncate?
+			r4 = file2open;
+			r4 = r4 + 2;
+			r5 = acl;		//1102o = create/trunc   // 0000 = readonly
+			r3 = 0;
+			r3b = [r5+2];
+			r2 = CHAR_w;
+			if(r3 == r2){
+				r5 = 0002h;   // FreeBSD uses hex here...
+			} else {
+				r5 = 0000h;
+			}
+			//echo_character(STDOUT, r3);
+			r3 = 420;  //  -rw-r--r-- file permission.
+			r0 = 5;
+			syscall;
+			if (%CARRY){
+				r0 = 0;
+			}
+		}
+	}
+	push r0;
+	if(r0){
+		// If we have a file, was it an read-only open?
+		r5 = acl;
+		r3 = 0;
+		r3b = [r5+2];
+		r2 = CHAR_r;
+		if(r3 == r2){
+			// It was, so get the filesize, and read the entire file into memory...
+			r1 = r0;  // make r1 our file handle.
+			
+			r2 = _fsize(r1); // our file size.
+			r3 = file_stack_ptr;
+			file[r3].filesize = r2;
+			r2 = r2 >> 12;
+			r2 = r2 + 1;
+			r2 = r2 << 12;		// Round buffer up to fill full 4K page
+			r8 = _calloc(r2, 1);		// Allocate buffer.
+			if(r8){
+				push r1;
+				file[r3].buffer = r8;
+				file[r3].buffer_offset = 0;;
+			
+				r0 = 03;		// Sys_read
+				r4 = r1;		// handle
+				r5 = r8;		//buffer;
+				r3 = file[r3].filesize;			// get entire file;
+				syscall;
+				pop r1;
+				_rewind(r1);
+				r0 = DEBUG;
+				if(r0){
+					r3 = file_stack_ptr;
+					echo_string(STDOUT, 'Read file into buffer: ');
+					r8 = file[r3].buffer;
+					echo_hex(STDOUT, r8);
+					echo_string(STDOUT, ' with ');
+					r8 = file[r3].filesize;
+					echo_integer(STDOUT, r8);
+					echo_string(STDOUT, 'bytes\n');
+				}
+			} else {
+				_fclose(r1);
+				abort_b0('Unable to load file into memory');
+			}
+		}
+	}
+	pop r0;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _calloc(record_size, num_records) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r3 = 0;
+	r1 = num_records;
+	r0 = record_size;
+	r2 = r0 * r1;
+	r14 = r2;
+	push r14;
+	
+	r4 = 0;				// Don't care where, let the system assign the region
+	r5 = r2;	        // Let's get our local heap size
+	r3 = 03;			// RW access
+	r2 = 1002h;			// MAP_ANON | MAP_PRIVATE
+	r8 = 0;				// Not a file we are mmap'ing
+	r8d = -1;
+	r9 = 0;				// ignored, since we're not dealing with a file
+	call mmap();
+	
+	r15 = r0;
+	pop r14;
+			
+	// r15 = our new pointer;
+	// r14 = our count in bytes;
+	r0 = 0;
+	r1 = 0;
+	while (r0 < r14){
+		[r15+r0] = r1;
+		r0 = r0 + 8;
+	}
+	//Done clearing the memory block!
+	r0 = r15;
+	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _munmap(ptr, size){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15; 
+	r4 = ptr;
+	r5 = size;
+	r0 = 0;
+	call munmap();
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _ftell(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 19;		// sys_lseek;
+	r4 = handle;
+	r5 = 0;			// don't change the offset
+	r3 = 1;			// seek from current position.
+	syscall;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fsize(handle){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 19;		// sys_lseek;
+	r4 = handle;
+	r5 = 0;			// set to end of file
+	r3 = 2;			// seek from end of file position.
+	syscall;
+	r4 = handle;
+	r1 = _ftell(r4);
+	_rewind(r4);
+	r0 = r1;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}	
+
+proc _getenv(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = argp;
+	r10 = string;
+	if(r1){
+		r4 = 0;			// pointer to string;
+		r5 = 0;			// zero result for strcmp;
+		r2 = 0;  		// r2 = count
+		r3 = [r1+r2*8];	// r3 = pointer to string;
+		while (r3){
+			r8 = _strcmp_env(r3, r10);
+			if(r8 == r5){
+				r4 = r3;	// we have a match;
+			}
+			r2 = r2 + 1;
+			r3 = [r1+r2*8];
+		}
+		r0 = r4;
+	} else {
+		r0 = 0;
+	}
+	if(r0){
+		// we have a string;
+		r1 = CHAR_EQU;
+		r2 = r2 ^ r2;
+		r2b = [r0];
+		while(r1 != r2){
+			r0 = r0 + 1;
+			r2b = [r0];
+		}
+		r0 = r0 + 1;
+	}
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _strcmp_env(src1, src2) { //rtns non-zero if different. src1 = ASCIIZ, src2 = b0.
+	push r1, r2, r3, r4, r5;
+	r4 = src1;
+	r5 = src2;
+	r5 = r5 + 2;
+	r2 = 1;			// Our count;
+	r0 = r0 ^ r0;
+	r1 = r0;
+	r3 = r0;
+	r0b = [r4];
+	r1b = [r5];
+	while (r0 == r1){
+		if (r0 == r3){
+			// We have reached the end of the string;
+			pop r5, r4, r3, r2, r1;
+			return(0);
+		}
+		r4 = r4 + 1;
+		r5 = r5 + 1;
+		r2 = r2 + 1;
+		r0b = [r4];
+		r1b = [r5];
+	}
+	if(r1 == r3){
+		r2 = 0;
+	}
+	r0 = r2;
+	//r0 = r0 - 1;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _rewind(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 19;		// sys_lseek;
+	r4 = handle;
+	r5 = 0;			// set to start of file
+	r3 = 0;			// seek from start of file position.
+	syscall;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc sys_write(_handle, _ptr, _size){
+	r0 = 4;						// sys_write
+	r4 = _handle;				// file handle = stdout
+	r5 = _ptr;					// pointer to string to print
+	r5 = r5 + 2;				// Adjust for b0 string type;
+	r3 = _size;					// String size
+	syscall;
+	return(r0);
+}
+
+proc _getpid(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = ??;		// I need the syscall number;
+	syscall;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc _settmppath(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	r2 = &'/tmp/';
+	r3 = &tmp_directory;
+	strcpy(r3, r2);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc echo_string(handle, string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = string;
+	r3 = strlen(r1);
+	r2 = handle;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc echo_integer(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] int_string;
+	r0 = &int_string;
+	r1 = integer;
+	itoa(r0, r1);
+	r0 = &int_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc echo_character(handle, character) {
+	m64 char_string;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	r1 = &char_string;
+	r2 = character;
+	[r1] = r2;
+	//[r1] = r2b;
+	r1 = r1 - 2;
+	r2 = handle;
+	r3 = 1;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc echo_float(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] fp0_string;
+	r0 = &fp0_string;
+	ftoa(r0);
+	r0 = &fp0_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};	// only does fp0
+
+proc echo_hex(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] hex_string;
+	r0 = &hex_string;
+	r1 = integer;
+	itoah(r0, r1);
+	r0 = &hex_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+proc memInit(){
+	push r4, r5;
+	r4 = 0;				// Don't care where, let the system assign the region
+	r5 = LOCAL_HEAP;	// Let's get our local heap size
+	r3 = 03;			// RW access
+	r2 = 1002h;			// MAP_ANON | MAP_PRIVATE
+	r8 = 0;				// Not a file we are mmap'ing
+	r8d = -1;
+	r9 = 0;				// ignored, since we're not dealing with a file
+	call mmap();
+	pop r5, r4;
+	return(r0);
+}

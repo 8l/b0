@@ -1,0 +1,9 @@
+#define LOCAL_HEAP = 1000000h;			// Allocate 10MB for local thread heap;
+#COMPILER_OPTION ELFO;
+lib 'stdlib_linux.b0';				// Linux sys_calls
+lib 'stdlib_unicode.b0';			// Unicode conversion routines
+
+proc non_std() as 'non_std'{
+	r0 = -1;
+	return(r0);
+}

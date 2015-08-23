@@ -1,0 +1,232 @@
+// b0_variables.b0
+//
+// Contains all the GLOBAL variables used.
+
+#ifdef WIN64;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 Windows x64';
+	#else;
+		m8 B0_VERSION = '0.0.23 Windows x64 - IA32';
+	#endif;
+#endif;
+
+#ifdef UNIX_LIBC;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 libc';
+	#else;
+		m8 B0_VERSION = '0.0.23 libc - IA32';
+	#endif;
+#endif;
+
+#ifdef SOLARIS;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 Solaris';
+	#else;
+		m8 B0_VERSION = '0.0.23 Solaris - IA32';
+	#endif;
+#endif;
+
+#ifdef LINUX;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 Linux';
+	#else;
+		m8 B0_VERSION = '0.0.23 Linux - IA32';
+	#endif;
+#endif;
+
+#ifdef FREEBSD;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 FreeBSD';
+	#else;
+		m8 B0_VERSION = '0.0.23 FreeBSD - IA32';
+	#endif;
+#endif;
+
+#ifdef SYSV_ELFO;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 Embedded';
+	#else;
+		m8 B0_VERSION = '0.0.23 Embedded - IA32';
+	#endif;
+#endif;
+
+#ifdef WIN_DLL;
+	#ifndef i386;
+		m8 B0_VERSION = '0.0.23 DLL Embedded';
+	#else;
+		m8 B0_VERSION = '0.0.23 DLL Embedded - IA32';
+	#endif;
+#endif;
+
+struc struct_entry {
+	m64 hash;
+	m64 type;
+	m64 size;
+	m64 offset;
+};
+
+struc macro_entry {
+	m64[MACRO_MAX_SIZE] m_token;
+};
+
+struc hash_table_struc{
+	m64 hash;
+	m8[TOKEN_MAX_SIZE] token;
+	m64 token_type;
+	m64 local_offset;		// If a proc, then this holds the current amount of space used for local variables
+	m64 define_int;			// If this is a define, it holds the value of the define integer value.
+	f64 define_fp;			// If this is a define, it holds the value of the define float value.
+	m64 struc_ptr;			// Pointer to structure/macro if a structure/macro.
+	m8[TOKEN_MAX_SIZE] token_import_name; // Real name of proc as defined by Windows.
+	m64 token_import_lib; 	// hash of the library in which this EPROC belongs to.
+};
+
+struc if_while_struc{
+	m64 type;
+	m64 offset;
+	m64 if_while_test1;
+	m64 if_while_test2;
+	m64 comparison;
+};
+
+struc file_struct{
+	m64 handle;
+	m8[FILENAME_MAX] filename;
+	m64 line_count;
+	m64 ch;
+	m64 look_ahead_ch;
+	m64 filesize;
+	m64 buffer;
+	m64 buffer_offset;
+};
+
+struc path_struc{
+	m8[FILENAME_MAX] path;
+}
+
+
+m64 ch;							//current character in queue
+m64 look_ahead_ch;				//look ahead character
+file_struct[MAX_LIB_DEPTH] file;
+								//Lib / Include stack
+m64 file_stack_ptr;				//Pointer into the file stack
+m64 code;						//pointer to code output file
+m64 data;						//pointer to data output file
+m64 bss;						//pointer to bss output file
+
+m64 rsp_entry;					// rsp value on entry to main...
+m64 ptr_callback;				// location of callback.
+
+m64 state;						//current instruction state
+m64 line_count;					//current line in source
+m64[TOKEN_STACK_SIZE] token_stack;		
+								//Stack containing the current tokens to be processed.
+m64[TOKEN_STACK_SIZE*2] pp_token_stack;
+								//Preparser token stack!
+m64[TOKEN_STACK_SIZE*2] pp_token_stack_2;
+								//Preparser token stack!								
+m64 token;						//Pointer to current token within token stack;
+m64 global;						//Are we at a global level?
+								// If zero, we are global otherwise = hash of proc
+								// we are in.
+m64 struc_def;					// Hash of current struc being defined!
+m64 do_process;					// Flag for structure processing.
+m64 target;						// Target Register of line (contains hash).
+m64 block_level = 0;			//Indentation level
+hash_table_struc[HASH_TABLE_SIZE] hash_table;			
+								//hash table
+m64 token_hash;					//Hash of current token
+m8[TOKEN_MAX_SIZE] token_buffer;	
+								//Buffer for tokens
+m64 toki; 						// index into above buffer.
+m8[FILENAME_MAX] filename;
+								//Filename for when opening a file.
+m8[FILENAME_MAX] tmp_filename;
+								//Temp filename used when searching includes.
+m8[FILENAME_MAX] output_filename;
+								//Filename for final output.
+m8[FILENAME_MAX] ctmp_filename; //Filename for Code tmp file;
+m8[FILENAME_MAX] dtmp_filename; //Filename for Data tmp file;
+m8[FILENAME_MAX] btmp_filename; //Filename for BSS tmp file;
+m8[FILENAME_MAX] tmp_directory; //The systems temporary directory;
+m64 pid;						//The PID of the compiler;
+m8[10h] pid_filename;			//PID as a string;
+
+m64 ptr_path;					//Pointer to our path statment
+m64 ptr_b0_env;					//Pointer to our B0_INCLUE environment variable
+m64 total_paths;
+path_struc[PATHS_MAX] paths; 	// allow upto 256 paths to be searched.
+								
+m64 asm_in_string;				//Flag used to see in if string within
+								// asm block.
+
+if_while_struc[TOKEN_STACK_SIZE] if_while_stack;
+								//Stack which holds the current block type
+								//Index by block_level
+m64 block_num;					//number of occurance of block.
+m64 local_var_offset;
+m64 dynamic_string_count;		//Count of the dynamic string decl.
+
+//Timing variables
+m64 time_start;
+m64 time_end;
+m64 duration;
+
+m64 DEBUG = 0;					// Whether to output debugging output.
+m64 ContinueOnAbort = 0;		// Flag to set if to continue on abort operation?
+#ifdef WIN64;
+m64 SOURCE_TYPE = SOURCE_PE;	// Default Source is PE64 output if building for Windows
+#else;
+	#ifdef WIN_DLL;
+	m64 SOURCE_TYPE = SOURCE_PE;	// Default Source for Windows.
+	#else;
+	m64 SOURCE_TYPE = SOURCE_ELF;	// Default Source is ELF output if building for other.
+	#endif;
+#endif;
+m64 UTF8_STRINGS = 0;  			// Encode strings as UTF8 instead of UTF16
+m64 CLI_UTF8_STRINGS = 0;		// UTF8 strings was defined by the CLI
+m64 SOURCE_CLI = 0;				// Output format defined by the CLI
+m64 HeaderPrinted = 0;			// Header info block has been printed, eg -v CLI switch
+m64 STACK_FRAME = 1;			// Generation of stack frame when calling functions.
+m64 EXPLICIT_EXPORT = 0;			// Only export explicit.
+m64 WarningsDisabled = 0;		// Set to disable generation of warnings
+m8[256] DLL_FILENAME;			// Filename for DLL object file. (Null Terminated).
+m8[256] RSRC_FILENAME;			// Filename for compiled Resource file. (Null Terminated).
+m64[TOKEN_STACK_SIZE] DLL_EXPORTS; // List of exported DLL Names.
+
+m64[MAX_LIB_DEPTH] pp_GenCode;	// Preparser toggle for code generation.
+m64 pp_ptr = 0;					// Pointer into above array.
+
+m64 v_base = 0;       			// Base variable;   (hash)
+m64 v_isStruc = 0;     			// The base variable is a Struc (1, or 0)
+m64 v_offset = 0;     			// Offset to sub-object; (value)
+m64 v_offset_type = 0; 			// Type of offset == state.
+m64 v_size = 0;					// Size of structure.
+m64 v_index = 0;       			// index into array of struc. (pos on token stack of start of array value;)
+m64 v_target = 0;      			// pos of what we are inserting into the variable (pos on token stack).
+m64 v_global = 0;      			// Variable is global? (if not then local)
+m64 v_reg = 0;					// Variable to hold calculated address of structure.
+
+m64[16] VectorRegType;			// Can what each vector register currently contains.
+m64 VectorMode = TYPE_V4F;		// Set the default vector type;
+
+m64 macro_index;				// Current depth in macro table
+macro_entry[MAX_LIB_DEPTH] macro_process_table; // Macro expansion tables.
+
+m8 B0_COPYRIGHT = 'This is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n';
+
+m8 TOKEN_KEYWORD = 'if\0else\0while\0lib\0asm\0return\0exit\0proc\0push\0pop\0syscall\0sysret\0fdecstp\0fincstp\0extern\0define\0undefine\0ifdef\0endif\0ifndef\0m8\0m16\0m32\0m64\0f32\0f64\0f80\0struc\0call\0jmp\0ret\0in\0out\0as\0COMPILER_OPTION\0vector\0macro\0v4i\0v4f\0v2f\0iflock\0lock\0unlock\0\0\0';
+#ifndef i386;
+m8 TOKEN_REG = '0\0r0\0r1\0r2\0r3\0r4\0r5\0r6\0r7\0r8\0r9\0r10\0r11\0r12\0r13\0r14\0r15\0\0';
+m8 TOKEN_REG_SHORT = 'r0b\0r1b\0r2b\0r3b\0r4b\0r5b\0r6b\0r7b\0r8b\0r9b\0r10b\0r11b\0r12b\0r13b\0r14b\0r15b\0r0w\0r1w\0r2w\0r3w\0r4w\0r5w\0r6w\0r7w\0\0';
+m8 TOKEN_REG_SHORT2 = 'r8w\0r9w\0r10w\0r11w\0r12w\0r13w\0r14w\0r15w\0r0d\0r1d\0r2d\0r3d\0r4d\0r5d\0r6d\0r7d\0r8d\0r9d\0r10d\0r11d\0r12d\0r13d\0r14d\0r15d\0\0';
+#else;
+m8 TOKEN_REG = '0\0r0\0r1\0r2\0r3\0r4\0r5\0r6\0r7\0\0';
+m8 TOKEN_REG_SHORT = 'r0b\0r1b\0r2b\0r3b\0r0w\0r1w\0r2w\0r3w\0r4w\0r5w\0r6w\0r7w\0\0';
+m8 TOKEN_REG_SHORT2 = '\0\0';
+#endif;
+m8 TOKEN_REG_FPU = 'fp0\0fp1\0fp2\0fp3\0fp4\0fp5\0fp6\0fp7\0\0';
+m8 TOKEN_REG_XMM = 'xmm0\0xmm1\0xmm2\0xmm3\0xmm4\0xmm5\0xmm6\0xmm7\0xmm8\0xmm9\0xmm10\0xmm11\0xmm12\0xmm13\0xmm14\0xmm15\0\0';
+m8 TOKEN_FLAG = 'CARRY\0NOCARRY\0OVERFLOW\0NOOVERFLOW\0PARITY\0NOPARITY\0ZERO\0NOTZERO\0SIGN\0NOTSIGN\0\0';
+m8 TOKEN_RESERVED = 'UTF8\0UTF16\0ELF\0ELFO\0PE\0DLL\0RSRC\0ENABLESTACKFRAME\0DISABLESTACKFRAME\0EXPLICITEXPORT\0\0';
+

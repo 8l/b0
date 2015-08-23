@@ -1,0 +1,52 @@
+#define heap = 10;
+
+macro my_macro(16){
+	r0 = r0;
+	r1 = r1;
+	r0 = 0;
+	if(r0 == r1){
+		r1 = r1 + 1;
+		if(r1){
+			r1 = 1234h;
+		}
+	}
+	#define bravo;
+	#ifdef bravo;
+	r0 = 6789h;
+}
+
+macro my_macro2(1){
+	push r0;
+	r1 = r1 + 0;
+	r2 = 13;
+	pop r0;
+	r15 = heap;
+	if(r0){
+		r0 = 0;
+	} else {
+		if(r0 == 0){
+			r0 = 1;
+		} else {
+			r0 = 2;
+		}
+	}
+}
+
+macro push_arg(1){
+	push $1;
+	$1 = $1 ^ $1;
+	pop $1;
+};
+
+m64 int2;
+
+proc main(){
+	r0 = r1;
+	push_arg(r0, r1);
+	return(2);
+}
+
+proc int(){
+	return(1);
+	
+};

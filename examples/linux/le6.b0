@@ -1,0 +1,38 @@
+// Application "Hello World" for Linux;
+
+// compile using: b0 -felf -UTF8 le6.b0 && fasm le6.asm le
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+m8 my_string = 'Hello World from b0™ :)\n';
+
+proc memInit(){
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;			// Get top of memory
+	r0 = 045;			// sys_brk
+	syscall;
+	r15 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;			// set new top of bss
+	return(r15);
+}
+
+proc echo(_ptr, _size){
+	r0 = 4;						// sys_write
+	r1 = 1;						// file handle = stdout
+	r2 = _ptr;					// pointer to string to print
+	r3 = _size;					// String size
+	syscall;
+}
+
+proc main(){
+	r6 = memInit();				// Setup local variable buffer!
+	r0 = &my_string;
+	r1 = r1 ^ r1;
+	r1b = [r0+1];
+	r0 = r0 + 2;
+	echo(r0, r1);
+	exit(0);
+}
+

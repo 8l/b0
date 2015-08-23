@@ -1,0 +1,686 @@
+// B0 build to be linked against!
+
+// This uses SYSV 64bit ABI.
+
+// For other ABIs you'll need to rewrite these functions.
+
+struc error_struc{
+	m64 ERROR_STRING;
+	m64 ERROR_FILENAME;
+	m64 LINE_NUMBER;
+};
+
+m64 local_r1;
+m64 local_r2;
+m64 local_r3;
+m64 local_r4;
+m64 local_r5;
+m64 local_r6;
+m64 local_r8;
+m64 local_r9;
+m64 local_r10;
+m64 local_r11;
+m64 local_r12;
+m64 local_r13;
+m64 local_r14;
+m64 local_r15;
+m64 stack_frame;
+
+m64[4] padding;
+error_struc error_field;
+m64[4] padding2;
+
+proc Init_b0() as 'b0_Init' {
+	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	// Clear all Global Variables.
+	ch = 0;							//current character in queue
+	look_ahead_ch = 0;				//look ahead character
+	file_stack_ptr = 0;				//Pointer into the file stack
+	code = 0;						//pointer to code output file
+	data = 0;						//pointer to data output file
+	bss = 0;						//pointer to bss output file
+
+	rsp_entry = 0;					// rsp value on entry to main...
+	ptr_callback = 0;
+
+	state = 0;						//current instruction state
+	line_count = 0;					//current line in source
+	token = 0;						//Pointer to current token within token stack;
+	global = 0;						//Are we at a global level?
+									// If zero, we are global otherwise = hash of proc
+									// we are in.
+	struc_def = 0;					// Hash of current struc being defined!
+	do_process = 0;					// Flag for structure processing.
+	target = 0;						// Target Register of line (contains hash).
+	block_level = 0;				//Indentation level
+	token_hash = 0;					//Hash of current token
+	toki = 0; 						// index into above buffer.
+	ptr_path = 0;					//Pointer to our path statment
+	ptr_b0_env = 0;					//Pointer to our B0_INCLUE environment variable
+	total_paths = 0;
+								
+	asm_in_string = 0;				//Flag used to see in if string within
+									// asm block.
+
+	block_num = 0;					//number of occurance of block.
+	local_var_offset = 0;
+	dynamic_string_count = 0;		//Count of the dynamic string decl.
+
+	time_start = 0;
+	time_end = 0;
+	duration = 0;
+
+	DEBUG = 0;					// Whether to output debugging output.
+	ContinueOnAbort = 0;		// Flag to set if to continue on abort operation?
+	SOURCE_TYPE = SOURCE_ELF;	// Default Source is flat output if building for other.
+	UTF8_STRINGS = 0;  			// Encode strings as UTF8 instead of UTF16
+	CLI_UTF8_STRINGS = 0;		// UTF8 strings was defined by the CLI
+	SOURCE_CLI = 0;				// Output format defined by the CLI
+	HeaderPrinted = 0;			// Header info block has been printed, eg -v CLI switch
+	STACK_FRAME = 1;			// Generation of stack frame when calling functions.
+	WarningsDisabled = 1;		// Set to disable generation of warnings
+	DLL_FILENAME[0] = 0;		// Filename for DLL object file. (Null Terminated).
+	RSRC_FILENAME[0] = 0;		// Filename for compiled Resource file. (Null Terminated).
+
+	pp_ptr = 0;					// Pointer into above array.
+
+	v_base = 0;       			// Base variable;   (hash)
+	v_isStruc = 0;     			// The base variable is a Struc (1, or 0)
+	v_offset = 0;     			// Offset to sub-object; (value)
+	v_offset_type = 0; 			// Type of offset == state.
+	v_size = 0;					// Size of structure.
+	v_index = 0;       			// index into array of struc. (pos on token stack of start of array value;)
+	v_target = 0;      			// pos of what we are inserting into the variable (pos on token stack).
+	v_global = 0;      			// Variable is global? (if not then local)
+	v_reg = 0;					// Variable to hold calculated address of structure.
+
+	VectorMode = TYPE_V4F;		// Reset the default Vector Mode.
+	r0 = TYPE_V4F;
+	VectorRegType[0] = r0;
+	VectorRegType[1] = r0;
+	VectorRegType[2] = r0;
+	VectorRegType[3] = r0;
+	VectorRegType[4] = r0;
+	VectorRegType[5] = r0;
+	VectorRegType[6] = r0;
+	VectorRegType[7] = r0;
+	VectorRegType[8] = r0;
+	VectorRegType[9] = r0;
+	VectorRegType[10] = r0;
+	VectorRegType[11] = r0;
+	VectorRegType[12] = r0;
+	VectorRegType[13] = r0;
+	VectorRegType[14] = r0;
+	VectorRegType[15] = r0;
+
+	macro_index = 0;
+
+	r0 = 0;
+	r1 = MAX_LIB_DEPTH;
+	r2 = 0;
+	while(r0 < r1){
+		r3 = &file[r0];
+		[r3 + file_struct.handle] = r2; 
+		[r3 + file_struct.filename] = r2; 
+		[r3 + file_struct.line_count] = r2; 
+		[r3 + file_struct.ch] = r2; 
+		[r3 + file_struct.look_ahead_ch] = r2; 
+		[r3 + file_struct.filesize] = r2; 
+		[r3 + file_struct.buffer] = r2; 
+		[r3 + file_struct.buffer_offset] = r2; 
+
+		r0 = r0 + 1;
+	}
+
+	r0 = 0;
+	r1 = MAX_LIB_DEPTH;
+	r2 = 0;
+	r3 = &pp_GenCode;
+	while(r0 < r1){
+		[r3] = r2;
+		r0 = r0 + 1;
+		r3 = r3 + 8;
+	}
+
+	r0 = 0;
+	r1 = TOKEN_STACK_SIZE;
+	r2 = 0;
+	r3 = &token_stack;
+	while(r0 < r1){
+		[r3] = r2;
+		r0 = r0 + 1;
+		r3 = r3 + 8;
+	}
+	
+	r0 = 0;
+	r1 = TOKEN_STACK_SIZE;
+	r2 = 0;
+	r3 = &pp_token_stack;
+	while(r0 < r1){
+		[r3] = r2;
+		r0 = r0 + 1;
+		r3 = r3 + 8;
+	}	
+
+	r0 = 0;
+	r1 = TOKEN_MAX_SIZE;
+	r2 = 0;
+	r3 = &token_buffer;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}	
+
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}	
+
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &output_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}	
+
+
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &tmp_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}	
+
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &ctmp_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}
+	
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &dtmp_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}
+		
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &btmp_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}
+
+	r0 = 0;
+	r1 = FILENAME_MAX;
+	r2 = 0;
+	r3 = &tmp_directory;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}
+	
+	r0 = 0;
+	pid = r0;
+	
+	r0 = 0;
+	r1 = 10h;
+	r2 = 0;
+	r3 = &pid_filename;
+	while(r0 < r1){
+		[r3] = r2b;
+		r0 = r0 + 1;
+		r3 = r3 + 1;
+	}
+	
+	r0 = 0;
+	r1 = TOKEN_STACK_SIZE;
+	r2 = 0;
+	while(r0 < r1){
+		r3 = &if_while_stack[r0];
+		[r3 + if_while_struc.type] = r2; 
+		[r3 + if_while_struc.offset] = r2; 
+		[r3 + if_while_struc.if_while_test1] = r2; 
+		[r3 + if_while_struc.if_while_test2] = r2; 
+		[r3 + if_while_struc.comparison] = r2; 
+		r0 = r0 + 1;
+	}
+
+	r0 = 0;
+	r1 = PATHS_MAX;
+	r2 = 0;
+	while(r0 < r1){
+		r3 = &paths[r0];
+		[r3 + path_struc.path] = r2; 
+		r0 = r0 + 1;
+	}
+
+	r0 = 0;
+	r1 = HASH_TABLE_SIZE;
+	r2 = 0;
+	while(r0 < r1){
+		r3 = &hash_table[r0];
+		[r3 + hash_table_struc.hash] = r2; 
+		[r3 + hash_table_struc.token] = r2; 
+		[r3 + hash_table_struc.token_type] = r2; 
+		[r3 + hash_table_struc.local_offset] = r2; 
+		[r3 + hash_table_struc.define_int] = r2; 
+		[r3 + hash_table_struc.define_fp] = r2; 
+		[r3 + hash_table_struc.struc_ptr] = r2; 
+		[r3 + hash_table_struc.token_import_name] = r2; 
+		[r3 + hash_table_struc.token_import_lib] = r2; 
+		r0 = r0 + 1;
+	}
+	
+	r0 = 1;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc b0_SetSourceFilename() as 'b0_SetSourceFilename'{ 			// Set's the source filename
+	push r1, r2, r3, r4, r5, r6, r8, r9, r10, r11, r12, r13, r14, r15;
+	// r4 = pointer to string;
+	r1 = &filename;
+	r1 = r1 + 2;
+	r2 = r2 ^ r2;
+	r3 = r3 ^ r3;
+	r2b = [r4];
+	while(r2){
+		[r1] = r2b;
+		r1 = r1 + 1;	// pointer to destination
+		r4 = r4 + 1;	// pointer to source
+		r3 = r3 + 1;	// character count
+		r2b = [r4];
+	}
+	r1 = &filename;
+	[r1] = r3b;
+	[r1+1] = r3b;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+	return(r0);	
+};
+
+proc b0_SetOutputFilename() as 'b0_SetOutputFilename'{			// Set the output filename;
+	push r1, r2, r3, r4, r5, r6, r8, r9, r10, r11, r12, r13, r14, r15;
+	// r4 = pointer to string;
+	r1 = &output_filename;
+	r1 = r1 + 2;
+	r2 = r2 ^ r2;
+	r3 = r3 ^ r3;
+	r2b = [r4];
+	while(r2){
+		[r1] = r2b;
+		r1 = r1 + 1;	// pointer to destination
+		r4 = r4 + 1;	// pointer to source
+		r3 = r3 + 1;	// character count
+		r2b = [r4];
+	}
+	r1 = &output_filename;
+	[r1] = r3b;
+	[r1+1] = r3b;	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+	return(r0);	
+};
+
+proc b0_SetIncludeDir() as 'b0_SetIncludeDir'{					// Add an include search dir
+	push r1, r2, r3, r4, r5, r6, r8, r9, r10, r11, r12, r13, r14, r15;
+	// r4 = pointer to string;
+
+	r2 = total_paths;
+	r1 = PATHS_MAX;
+	if (r2 > r1){
+		pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+		return(0);
+	}
+	r11 = FILENAME_MAX;
+	r0 = 0;
+	//r4 = str;
+	r0b = [r4];
+	r10 = 0;
+	//while(*str){
+	while(r0){
+		//i = 0;
+		r5 = &paths;
+		r3 = r2 << 8;	// Multiply by 256 (We assume that FILENAME MAX = 256;)
+		r5 = r5 + r3;
+		r5 = r5 + 2;	// Add in offset for size bytes.
+		//while((*str != ';')&&(*str)){
+		r8 = PATH_SEPARATOR;
+		r9 = 0;
+		if (r0 != r9){
+			if (r0 != r8){
+				r9 = 1;
+			}
+		}
+		while(r9){
+			//paths[total_paths][i] = *str++;
+			[r5+r10] = r0b;
+			r4 = r4 + 1;
+			r0 = 0;
+			r0b = [r4];
+			//i++;
+			r10 = r10 + 1;
+			//if (i >= FILENAME_MAX)
+				//abort_b0("File path supplied too large");
+			if (r10 >= r11){
+				pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+				return(-1);
+			}
+			r9 = 0;
+			if (r0 != r9){
+				if (r0 != r8){
+					r9 = 1;
+				}
+			}
+		//}
+		}
+		//if(paths[total_paths][i-1] != '/')
+			//paths[total_paths][i++] = '/'; // add terminating slash if not there
+		r0b = [r5+r10-1];
+		r8 = 2fh;
+		if (r0 != r8){
+			[r5+r10] = r8b;
+			r10 = r10 + 1;
+		}
+		//paths[total_paths][i] = '\0';		 // Null terminate the string.
+		r0 = 0;
+		[r5+r10] = r0w;
+		//total_paths++;
+		r2 = r2 + 1;
+		total_paths = r2;
+		//if (total_paths >= PATHS_MAX)
+			//return;  // Return, as the path buffer is now full.
+		if(r2 >= r1){
+			pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+			return(0);
+		}
+		//if (!*str)
+			//return;
+		r0b = [r4];
+		r10 = 0;
+		if (r0 == r10){
+			pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+			return(0);
+		}
+		//*str++;
+		r4 = r4 + 1;
+		r0 = 0;
+		r0b = [r4];
+	//}
+	}
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r6, r5, r4, r3, r2, r1;
+	return(r0);	
+};
+
+proc b0_SetSourceType() as 'b0_SetSourceType'{ 				// Set the source type;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = SOURCE_ELF;
+	if (r4 == r0){
+		SOURCE_TYPE = r4;
+	} else {
+		r0 = SOURCE_PE;
+		if (r4 == r0){
+			SOURCE_TYPE = r4;
+		} else {
+			r0 = SOURCE_ELFO;
+			if (r4 == r0){
+				SOURCE_TYPE = r4;
+			} else {
+				r0 = SOURCE_DLL;
+				if (r4 == r0){
+					SOURCE_TYPE = r4;
+				} else {
+					SOURCE_TYPE = SOURCE_ELF;
+				}
+			}
+		}
+	} 
+	SOURCE_CLI = 1;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc b0_SetUTF8String() as 'b0_SetUTF8String'{ 				// Set the String Type;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 1;
+	if (r4 == r0){
+		UTF8_STRINGS = r4;
+	} else {
+		UTF8_STRINGS = 0;
+	} 
+	CLI_UTF8_STRINGS = 1;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc b0_GetBuildTime() as 'b0_GetBuildTime' {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = time_end;
+	r2 = time_start;
+	r0 = r1 - r2;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);	
+}
+
+proc memDestroy(){
+	push r4, r5;
+	r4 = stack_frame;	// Let's get our local heap size
+	r5 = LOCAL_HEAP;
+	r0 = 0;
+	//call munmap();
+	call free();
+	r15 = r0;
+	pop r5, r4;
+	return(r15);
+}
+
+proc b0_build() as 'b0_Build' {								// Attempt to build
+	rsp_entry = r7;
+	local_r1 = r1;
+	local_r2 = r2;
+	local_r3 = r3;
+	local_r4 = r4;
+	local_r5 = r5;
+	local_r6 = r6;
+	local_r8 = r8;
+	local_r9 = r9;
+	local_r10 = r10;
+	local_r11 = r11;
+	local_r12 = r12;
+	local_r13 = r13;
+	local_r14 = r14;
+	local_r15 = r15;
+	r6 = memInit();
+	stack_frame = r6;
+	__Init_libc();
+	
+	//time_start = clock();
+	r1 = _clock();
+	time_start = r1;
+	
+	b0_build_hashtable();
+	
+	//b0_env = getenv("B0_INCLUDE");
+	r0 = _getenv('B0_INCLUDE');
+	ptr_b0_env = r0;
+	
+	//if(b0_env) scan_env(b0_env);
+	r0 = ptr_b0_env;
+	if(r0){
+		scan_env(r0);
+	}
+
+	state = 0;
+	file_stack_ptr = 0;
+	local_var_offset = 0;
+	dynamic_string_count = 0;
+	look_ahead_ch = 0; 	// Prime the current char buffer
+	token = 0;
+	global = 0;			// We start from a global level
+	block_level = 0;
+	block_num = 0;
+	pp_ptr = 0;
+	pp_GenCode[0] = 1;
+	
+	//echo_string(STDOUT, 'Filename = ');
+	//r0 = &filename;
+	//echo_string(STDOUT, r0);
+	//echo_string(STDOUT, ' Output = ');
+	//r0 = &output_filename;
+	//echo_string(STDOUT, r0);
+	//echo_cr(STDOUT);
+	
+	// Attempt to Open Main Source file
+	b0_open_source_file();
+	
+	// Open Temp Files
+	b0_open_temp_files();
+	
+	// Attempt to build
+	r1 = 0;
+	r2 = file_stack_ptr;
+	while(r2 ~>= r1){
+		block();
+		r1 = 0;
+		r2 = file_stack_ptr;
+	}
+	
+	//rewind(code);
+	r1 = code;
+	_rewind(r1);
+	//rewind(data);
+	r1 = data;
+	_rewind(r1);
+	//rewind(bss);
+	r1 = bss;
+	_rewind(r1);
+	
+	// Open our output file (make r14 = handle)
+	r14 = b0_open_output_file();
+	
+	// Build final file (r14 = handle to final file)
+	b0_build_source(r14);
+	
+	// Exit
+	b0_close_temp_files(r14); // r14 = handle to final file.
+	
+	//time_end = clock();
+	r0 = _clock();
+	time_end = r0;
+
+	// Now deallocate all memory used for the structures.
+	deallocate_struc_memory();
+	//echo_string(STDOUT, 'Deallocated mem\n');
+	
+	// Destroy local stack frame.
+	#COMPILER_OPTION DISABLESTACKFRAME;
+	memDestroy();
+	#COMPILER_OPTION ENABLESTACKFRAME;
+	r1 = local_r1;
+	r2 = local_r2;
+	r3 = local_r3;
+	r4 = local_r4;
+	r5 = local_r5;
+	r6 = local_r6;
+	r8 = local_r8;
+	r9 = local_r9;
+	r10 = local_r10;
+	r11 = local_r11;
+	r12 = local_r12;
+	r13 = local_r13;
+	r14 = local_r14;
+	r15 = local_r15;
+	return(r0);
+};
+
+proc b0_SetProgressCallback() as 'b0_SetProgressCallback'{
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	ptr_callback = r4;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(0);
+};
+
+proc abort_b0(s){
+
+	//time_end = clock();
+	r0 = _clock();
+	time_end = r0;
+
+	r0 = code;
+	_fclose(r0);
+	//fclose(data);
+	r0 = data;
+	_fclose(r0);
+	//fclose(bss);
+	r0 = bss;
+	_fclose(r0);
+	
+	b0_delete_temp_files();
+
+	r1 = file_stack_ptr;
+	r0 = &file[r1].filename;
+	r0 = r0 + 2;
+	error_field.ERROR_FILENAME = r0;
+	r0 = s;
+	r0 = r0 + 2;
+	error_field.ERROR_STRING = r0;
+	r0 = file[r1].line_count;
+	error_field.LINE_NUMBER = r0;
+	
+	// Now run through the file stack and close all files.
+	close_open_files();
+	
+	// Now deallocate all memory used for the structures.
+	deallocate_struc_memory();
+	
+	// Destroy local stack frame.
+	#COMPILER_OPTION DISABLESTACKFRAME;
+	memDestroy();
+	#COMPILER_OPTION ENABLESTACKFRAME;
+	
+	r0 = -1;
+	r7 = rsp_entry;
+	r1 = local_r1;
+	r2 = local_r2;
+	r3 = local_r3;
+	r4 = local_r4;
+	r5 = local_r5;
+	r6 = local_r6;
+	r8 = local_r8;
+	r9 = local_r9;
+	r10 = local_r10;
+	r11 = local_r11;
+	r12 = local_r12;
+	r13 = local_r13;
+	r14 = local_r14;
+	r15 = local_r15;
+	ret;
+}
+
+proc b0_GetError() as 'b0_GetError'{
+	r0 = &error_field;
+	return(r0);
+}

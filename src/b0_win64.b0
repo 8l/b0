@@ -1,0 +1,708 @@
+// Windows OS-specific system calls go here.
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+extern CreateFileA() as 'CreateFileA' in KERNEL32;
+extern ReadFile() as 'ReadFile' in KERNEL32;
+extern WriteFile() as 'WriteFile' in KERNEL32;
+extern CloseHandle() as 'CloseHandle' in KERNEL32;
+extern SetFilePointer() as 'SetFilePointer' in KERNEL32;
+extern GetEnvironmentVariable() as 'GetEnvironmentVariableA' in KERNEL32;
+extern GetStdHandle() as 'GetStdHandle' in KERNEL32;
+extern GetTickCount() as 'GetTickCount' in KERNEL32;
+extern GlobalAlloc() as 'GlobalAlloc' in KERNEL32;
+extern GlobalFree() as 'GlobalFree' in KERNEL32;
+extern DeleteFile() as 'DeleteFileA' in KERNEL32;
+extern GetCommandLineW() as 'GetCommandLineW' in KERNEL32;
+extern LocalFree() as 'LocalFree' in KERNEL32;
+extern AttachConsole() as 'AttachConsole' in KERNEL32;
+extern FreeConsole() as 'FreeConsole' in KERNEL32;
+extern GetCurrentProcessId() as 'GetCurrentProcessId' in KERNEL32;
+extern GetTempPath() as 'GetTempPathA' in KERNEL32;
+extern MessageBox() as 'MessageBoxA' in USER32 as 'USER32.DLL';
+extern CommandLineToArgvW() as 'CommandLineToArgvW' in SHELL32 as 'SHELL32.DLL';
+
+#define LOCAL_HEAP = 10000000h;
+
+#define STD_INPUT_HANDLE       = -10;
+#define STD_OUTPUT_HANDLE      = -11;
+#define STD_ERROR_HANDLE       = -12;
+
+#define STDIN  = 0;
+#define STDOUT = 1;
+#define STDERR = 2;
+
+#define CREATE_NEW			   = 1;
+#define CREATE_ALWAYS	       = 2;
+#define OPEN_EXISTING	       = 3;
+#define OPEN_ALWAYS			   = 4;
+#define TRUNCATE_EXISTING      = 5;
+
+#define FILE_SHARE_READ        = 1;
+#define FILE_SHARE_WRITE       = 2;
+#define FILE_SHARE_DELETE      = 4;
+
+//; File attributes
+
+#define FILE_ATTRIBUTE_READONLY   = 001h;
+#define FILE_ATTRIBUTE_HIDDEN	  = 002h;
+#define FILE_ATTRIBUTE_SYSTEM	  = 004h;
+#define FILE_ATTRIBUTE_DIRECTORY  = 010h;
+#define FILE_ATTRIBUTE_ARCHIVE	  = 020h;
+#define FILE_ATTRIBUTE_NORMAL	  = 080h;
+#define FILE_ATTRIBUTE_TEMPORARY  = 100h;
+#define FILE_ATTRIBUTE_COMPRESSED = 800h;
+
+//; File flags
+
+#define FILE_FLAG_WRITE_THROUGH    = 80000000h;
+#define FILE_FLAG_OVERLAPPED	   = 40000000h;
+#define FILE_FLAG_NO_BUFFERING	   = 20000000h;
+#define FILE_FLAG_RANDOM_ACCESS    = 10000000h;
+#define FILE_FLAG_SEQUENTIAL_SCAN  = 08000000h;
+#define FILE_FLAG_DELETE_ON_CLOSE  = 04000000h;
+#define FILE_FLAG_BACKUP_SEMANTICS = 02000000h;
+#define FILE_FLAG_POSIX_SEMANTICS  = 01000000h;
+
+//; Notify filters
+
+#define FILE_NOTIFY_CHANGE_FILE_NAME  = 001h;
+#define FILE_NOTIFY_CHANGE_DIR_NAME   = 002h;
+#define FILE_NOTIFY_CHANGE_ATTRIBUTES = 004h;
+#define FILE_NOTIFY_CHANGE_SIZE       = 008h;
+#define FILE_NOTIFY_CHANGE_LAST_WRITE = 010h;
+#define FILE_NOTIFY_CHANGE_SECURITY   = 100h;
+
+//; File types
+
+#define FILE_TYPE_UNKNOWN = 0;
+#define FILE_TYPE_DISK	  = 1;
+#define FILE_TYPE_CHAR	  = 2;
+#define FILE_TYPE_PIPE	  = 3;
+#define FILE_TYPE_REMOTE  = 8000h;
+
+//; OpenFile modes
+
+#define OF_READ 	    = 0000h;
+#define OF_WRITE	    = 0001h;
+#define OF_READWRITE	    = 0002h;
+#define OF_SHARE_COMPAT     = 0000h;
+#define OF_SHARE_EXCLUSIVE  = 0010h;
+#define OF_SHARE_DENY_WRITE = 0020h;
+#define OF_SHARE_DENY_READ  = 0030h;
+#define OF_SHARE_DENY_NONE  = 0040h;
+#define OF_PARSE	    = 0100h;
+#define OF_DELETE	    = 0200h;
+#define OF_VERIFY	    = 0400h;
+#define OF_CANCEL	    = 0800h;
+#define OF_CREATE	    = 1000h;
+#define OF_PROMPT	    = 2000h;
+#define OF_EXIST	    = 4000h;
+#define OF_REOPEN	    = 8000h;
+
+#define GENERIC_READ	       = 80000000h;
+#define GENERIC_WRITE	       = 40000000h;
+
+#define CLOCKS_PER_SEC = 1000000;  //POSIX value
+
+m8[256] env_buffer;
+m64 _stdin;
+m64 _stdout;
+m64 _stderr;
+
+#define ARGC_MAX = 256;
+
+m64 pArgc = 0;
+m64 pArgv = 0;
+
+m64 szArglist;
+m64 nArgs;
+m64[ARGC_MAX] __argv;		// Allow upto argc to get up to 256.
+m8[65536] __argv_strings;	// The actual command line strings;
+
+
+proc _fgetc(handle) {	
+	m64 buffer;
+	m64 buffer2;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = handle;
+	r3 = &buffer;
+	r8 = 1;		// 1 byte to read;
+	r9 = &buffer2;  //place for return of number of bytes read;
+	r0 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 30h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	[r7+20h] = r0;
+	[r7+28h] = r0;
+	call ReadFile();
+	r7 = r6;
+	pop r6;
+	if(r0){
+		r2 = &buffer2;
+		r0 = 0;
+		r0d = [r2];
+		r1 = 0;
+		if(r1 == r0){
+			r0 = EOF;
+		} else {
+			r2 = &buffer;
+			r0 = 0;
+			r0b = [r2];
+		} 
+	} else {
+		r0 = EOF;
+	}
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+
+proc _fclose(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = handle;
+	r0 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call CloseHandle();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _remove(string) {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = string;
+	r2 = r2 + 2;
+	r0 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call DeleteFile();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+
+proc _clock() {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetTickCount();
+	r7 = r6;
+	pop r6;
+	r0 = r0 >> 10;		// Convert to secs. (Really rough)
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fopen(file2open, acl) {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = acl;		
+	r3 = 0;
+	r3b = [r2+2];
+	r2 = CHAR_w;
+	if(r3 == r2){
+		r3 = GENERIC_READ + GENERIC_WRITE;		//create/trunc;
+		r10 = CREATE_ALWAYS;
+	} else {
+		r3 = GENERIC_READ;		//read only;
+		r10 = OPEN_EXISTING;
+	}
+	r2 = file2open;
+	r2 = r2 + 2;
+	r8 = FILE_SHARE_READ;		// Allow other processes to read the file;
+	r9 = 0;		// default security options;
+
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 40h;
+	[r7+20h] = r10;
+	r10 = FILE_ATTRIBUTE_NORMAL;
+	[r7+28h] = r10;
+	r10 = 0;
+	[r7+30h] = r10;
+	[r7] = r10;
+	[r7+08h] = r10;
+	[r7+10h] = r10;
+	[r7+18h] = r10;
+	[r7+38h] = r10;
+	
+	call CreateFileA();
+	r1 = -1; // invalid handle
+	if(r0 == r1){
+		r0 = 0;
+	}
+	r7 = r6;				// restore stack
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _calloc(record_size, num_records) {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r3 = 0;
+	r1 = num_records;
+	r0 = record_size;
+	r3 = r0 * r1;
+	r2 = 40h;  // Fixed mem block and zero memory;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GlobalAlloc();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _munmap(ptr, size){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = ptr;
+	r3 = size;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GlobalFree();
+	r7 = r6;
+	pop r6;
+
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _ftell(handle) {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = handle;
+	r3 = 0;
+	r8 = 0;
+	r9 = 1; // Move from current position.
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r3;
+	[r7+08h] = r3;
+	[r7+10h] = r3;
+	[r7+18h] = r3;
+	call SetFilePointer();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);};
+
+proc _getenv(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = string;
+	r2 = r2 + 2;
+	r3 = &env_buffer;
+	[r3] = 0;
+	r8 = 255;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetEnvironmentVariable();
+	r7 = r6;
+	pop r6;
+	r0 = &env_buffer;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _rewind(handle) {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r2 = handle;
+	r3 = 0;
+	r8 = 0;
+	r9 = 0; // Start at beginning of file.
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call SetFilePointer();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc sys_write(_handle, _ptr, _size){
+	m64 buffer;
+	r2 = _handle;
+	r0 = STDIN;
+	if(r2 == r0){
+		r2 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r2 == r0){
+			r2 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r2 == r0){
+				r2 = _stderr;
+			}
+		}
+	}	
+	r3 = _ptr;
+	r3 = r3 + 2;
+	r8 = _size;
+	r9 = &buffer;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 30h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	[r7+20h] = r0;
+	[r7+28h] = r0;
+	
+	call WriteFile();
+	r7 = r6;
+	pop r6;
+	return(r0);
+}
+
+proc _getpid() {	
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetCurrentProcessId();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _settmppath(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	r2 = FILENAME_MAX;
+	r3 = &tmp_directory;
+	r3 = r3 + 2;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetTempPath();
+	r7 = r6;
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc echo_string(handle, string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r1 = string;
+	r3 = strlen(r1);
+	r2 = handle;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_integer(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] int_string;
+	r0 = &int_string;
+	r1 = integer;
+	itoa(r0, r1);
+	r0 = &int_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_character(handle, character) {
+	m64 char_string;
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	r1 = &char_string;
+	r2 = character;
+	[r1] = r2;
+	//[r1] = r2b;
+	r1 = r1 - 2;
+	r2 = handle;
+	r3 = 1;
+	sys_write(r2, r1, r3);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_float(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] fp0_string;
+	r0 = &fp0_string;
+	ftoa(r0);
+	r0 = &fp0_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};	// only does fp0
+
+proc echo_hex(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	m8[256] hex_string;
+	r0 = &hex_string;
+	r1 = integer;
+	itoah(r0, r1);
+	r0 = &hex_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc SetArgCV(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;	
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetCommandLineW();  // Returns a UNICODE string NOT ANSI!!!!
+	r2 = r0;  // Pass our rtn'd parameter from above to this call
+	r3 = &nArgs;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call CommandLineToArgvW();
+	r7 = r6;
+	pop r6;
+
+	szArglist = r0;
+	// nArgs set by above function call;
+
+	//Now convert all those UCS-2 strings to ANSI
+
+	r15 = &__argv_strings;
+	r14 = szArglist;
+	r13 = nArgs;
+	r1 = 0;
+	__argv[r1] = r15;
+	while(r1 < r13){
+		r12 = [r14+r1*8];	// pointer to the first string;
+		r11 = 0;
+		r11w = [r12];		// Get our first char
+		while(r11){
+			// Keep going until we get a NULL character
+			[r15] = r11b;
+			r15 = r15 + 1;
+			[r15] = 0;
+			r12 = r12 + 2;
+			r11 = 0;
+			r11w = [r12];		// Get our first char
+		}
+		r1 = r1 + 1;
+		r15 = r15 + 1;
+		__argv[r1] = r15;
+	}
+	
+	// Clear the buffer than Windows allocated for us.
+	r7 = r7 - 20h;
+	r2 = szArglist;
+	call LocalFree();
+	r7 = r7 + 20h;
+
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	r4 = nArgs;
+	r5 = &__argv;
+	//r5 = szArglist;
+};
+
+proc __Init_Win64(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	// First we a GUI app, so let's attach to the parent console
+	r2 = 0;
+	r2d = -1;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call AttachConsole();
+	r7 = r6;
+	pop r6;	
+	r2 = STD_INPUT_HANDLE;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetStdHandle();
+	r7 = r6;
+	pop r6;
+	_stdin = r0;
+	r2 = STD_OUTPUT_HANDLE;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetStdHandle();
+	r7 = r6;
+	pop r6;
+	_stdout = r0;
+	r2 = STD_ERROR_HANDLE;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call GetStdHandle();
+	r7 = r6;
+	pop r6;
+	_stderr = r0;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+};
+
+m8 window_message = 'b0 v0.0.23\nCopyright (c) 2005-2008, Darran Kartaschew.\nAll rights reserved.\nThis is free software; see the source for copying conditions.  There is\n NO warranty; not even for MERCHANTABILITY or FITNESS FOR \nA PARTICULAR PURPOSE.\n\nUsage: b0 [-v] [-W] [-?|-h|-l] [-f<type>] [-i<include>] [-!] [-DEBUG] [-UTF8] [-UTF16] [-o<filename>] <filename>\n\nWhere:\n\t-v\t\tDisplay Version Information\n\t-W\t\tDisable warnings during compilation\n\t-? or -h\t\tDisplay Help\n\t-l\t\tDisplay Software License\n\t-f<type>\t\tOuptut Format Type, \'elf\',\'elfo\', \'pe\' or\n\t\t\t \'dll\' accepted\n\t-i<include>\tInclude directories for libraries\n\t-!\t\tContinue to compile on error \n\t\t\t(DANGEROUS)\n\t-DEBUG\t\tDisplay Extremely Verbose Debugging \n\t\t\tInformation\n\t-UTF8\t\tEncode strings as UTF8\n\t-UTF16\t\tEncode strings as UTF16\n\t-o<filename>\tOutput Filename\n\t<filename>\tFile to compile\n\neg: b0 -felf -i./include -DEBUG myprog.b0\n';
+
+m8 window_license = 'BSD Licence\n-----------\n\nCopyright (c) 2000-2008, Darran Kartaschew.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n*  Redistributions of source code must retain the above copyright notice, \nthis list of conditions and the following disclaimer.\n\n*  Redistributions in binary form must reproduce the above copyright notice,\nthis list of conditions and the following disclaimer in the documentation\nand/or other materials provided with the distribution.\n\n*  Neither the name of "B0" nor the names of its contributors may be used\nto endorse or promote products derived from this software without specific\nprior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE \nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE \nARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE \nLIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR \nCONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF \nSUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\nINTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN \nCONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) \nARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\nPOSSIBILITY OF SUCH DAMAGE.\n\n';
+
+m8 window_caption = 'b0 Compiler for Windows XP x64 / Windows Vista x64';
+
+proc PopUpHelp(){
+	r9 = 40h;		// Window with I in it...
+	r8 = &window_caption;
+	r8 = r8 + 2; // remove length markers from string
+	r3 = &window_message;
+	r3 = r3 + 2; // remove length markers from string
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call MessageBox();
+	r7 = r6;
+	pop r6;
+	exit(0);
+};
+
+proc PopUpLicense(){
+	r9 = 00h;		// Basic Window...
+	r8 = &window_caption;
+	r8 = r8 + 2; // remove length markers from string
+	r3 = &window_license;
+	r3 = r3 + 2; // remove length markers from string
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call MessageBox();
+	r7 = r6;
+	pop r6;
+	exit(0);
+}
+
+proc __Exit_Win64(){
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call FreeConsole();
+	r7 = r6;
+	pop r6;	
+};

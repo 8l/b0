@@ -1,0 +1,169 @@
+// B0
+// 
+// Copyright (C) 2000-2007, Darran Kartaschew.
+// All rights reserved.
+// 
+// Licence
+// -------
+// 
+// Copyright (C) 2000-2006, Darran Kartaschew.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification, are permitted
+// provided that the following conditions are met:
+// 
+// *  Redistributions of source code must retain the above copyright notice, this list of conditions
+//    and the following disclaimer. 
+// 
+// *  Redistributions in binary form must reproduce the above copyright notice, this list of 
+//    conditions and the following disclaimer in the documentation and/or other materials provided
+//    with the distribution. 
+// 
+// *  Neither the name of "B0" nor the names of its contributors may be used to endorse or promote 
+//    products derived from this software without specific prior written permission. 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+// FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
+// IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+// OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+
+// Build b0.dll first, then:
+// $ b0 -o b0_dll.asm b0_dll.b0
+// $ fasm b0_dll.asm b0_dll.exe
+//
+#COMPILER_OPTION PE UTF8;
+#COMPILER_OPTION RSRC '..\\..\\src\\rsrc\\b0.res';
+
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+extern MessageBox() as 'MessageBoxA' in USER32 as 'USER32.DLL';
+
+extern b0_Init() as 'b0_Init' in B0DLL as 'b0.dll';						// Used to Reset the compiler internals to default
+extern b0_SetProgressCallback() as 'b0_SetProgressCallback' in B0DLL;	// Set location of callback function to get timer tick
+extern b0_SetSourceFilename() as 'b0_SetSourceFilename' in B0DLL; 		// Set's the source filename
+extern b0_SetOutputFilename() as 'b0_SetOutputFilename' in B0DLL;		// Set the output filename;
+extern b0_SetSourceType() as 'b0_SetSourceType' in B0DLL;				// Set the source type
+extern b0_SetUTF8String() as 'b0_SetUTF8String' in B0DLL;				// Set the String Type;
+extern b0_SetIncludeDir() as 'b0_SetIncludeDir' in B0DLL;				// Add an include search dir
+extern b0_Build() as 'b0_Build' in B0DLL;								// Attempt to build
+extern b0_GetBuildTime() as 'b0_GetBuildTime' in B0DLL;					// Get our build time
+extern b0_GetError() as 'b0_GetError' in B0DLL;							// Get the error result if b0_build returns '-1'
+
+#define B0_SOURCE_ELF = 02;
+#define B0_SOURCE_PE = 03;
+#define B0_SOURCE_ELFO = 04;
+#define B0_SOURCE_DLL = 05;
+
+#define B0_UTF16_STR = 0;
+#define B0_UTF8_STR = 1;
+
+struc error_struc{
+	m64 ERROR_STRING;
+	m64 ERROR_FILENAME;
+	m64 LINE_NUMBER;
+};
+
+m64 count = 0;
+m64 error = 0;
+m8 window_caption = 'b0 Compiler for Windows XP x64 / Windows Vista x64';
+m8 window_message = 'Success\n';
+m8 window_message2 = 'Failed\n';
+
+
+proc callback(){
+	r0 = count;
+	r0 = r0 + 1;
+	count = r0;
+};
+
+proc PopUpSuccess(){
+	r9 = 00h;		
+	r8 = &window_caption;
+	r8 = r8 + 2; // remove length markers from string
+	r3 = &window_message;
+	r3 = r3 + 2; // remove length markers from string
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call MessageBox();
+	r7 = r6;
+	pop r6;
+};
+
+proc PopUpFail(){
+	r9 = 00h;		
+	r8 = &window_caption;
+	r8 = r8 + 2; // remove length markers from string
+	r3 = &window_message2;
+	r3 = r3 + 2; // remove length markers from string
+	r2 = 0;
+	push r6;
+	r6 = r7;
+	r7 = r7 && -16;			// Re-align stack to rsp mod 16 = 0
+	r7 = r7 - 20h;
+	r0 = 0;
+	[r7] = r0;
+	[r7+08h] = r0;
+	[r7+10h] = r0;
+	[r7+18h] = r0;
+	call MessageBox();
+	r7 = r6;
+	pop r6;
+};
+
+proc main(){
+	r14 = 0;
+	r15 = 5;
+
+	while(r14 < r15){
+		count = 0;
+
+		call b0_Init();
+		
+		r2 = B0_UTF8_STR;
+		call b0_SetUTF8String();
+		
+		r2 = &'b02.asm';
+		r2 = r2 + 2;
+		call b0_SetOutputFilename();
+		
+		r2 = B0_SOURCE_PE;
+		call b0_SetSourceType();
+		
+		r2 = &'b0.b0';
+		r2 = r2 + 2;
+		call b0_SetSourceFilename();
+	
+		r2 = &callback();
+		call b0_SetProgressCallback();
+		
+		call b0_Build();
+
+		r1 = 0;
+		
+		if(r0 ~< r1){
+			call b0_GetError();
+			error = r0;
+			PopUpFail();
+			exit(1);
+		}
+		call b0_GetBuildTime();
+		
+		r14 = r14 + 1;
+
+	} 
+
+	PopUpSuccess();
+	exit(0);
+}

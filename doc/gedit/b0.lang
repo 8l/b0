@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language _name="b0" version="1.0" _section="Sources" mimetypes="application/x-b0;application/x-b0src">
+	
+	<escape-char>\</escape-char>
+
+	<line-comment _name = "Line Comment" style= "Comment" end-at-line-end="true">
+		<start-regex>//</start-regex>
+	</line-comment>
+
+	<string _name = "String" style = "String" end-at-line-end = "TRUE">
+		<start-regex>'</start-regex>
+		<end-regex>'</end-regex>
+	</string>
+
+	<keyword-list _name = "Keywords" style = "Keyword" case-sensitive="TRUE">
+	      <keyword>asm</keyword>
+	      <keyword>struc</keyword>
+	      <keyword>if</keyword>
+	      <keyword>else</keyword>
+	      <keyword>while</keyword>
+	      <keyword>push</keyword>
+	      <keyword>pop</keyword>
+	      <keyword>proc</keyword>
+	      <keyword>fincstp</keyword>
+	      <keyword>fdecstp</keyword>
+	      <keyword>syscall</keyword>
+	      <keyword>sysret</keyword>
+	      <keyword>break</keyword>
+	      <keyword>exit</keyword>
+	      <keyword>return</keyword>
+	      <keyword>in</keyword>
+	      <keyword>as</keyword>
+	      <keyword>lib</keyword>
+	      <keyword>extern</keyword>
+	      <keyword>call</keyword>
+	      <keyword>jmp</keyword>
+	      <keyword>ret</keyword>
+	      <keyword>out</keyword>
+	      <keyword>main</keyword>
+	      <keyword>iflock</keyword>
+	      <keyword>lock</keyword>
+	      <keyword>unlock</keyword>
+	</keyword-list>
+
+	<keyword-list _name = "Registers" style = "Register" case-sensitive="TRUE">
+	      <keyword>r0</keyword>
+	      <keyword>r1</keyword>
+	      <keyword>r2</keyword>
+	      <keyword>r3</keyword>
+	      <keyword>r4</keyword>
+	      <keyword>r5</keyword>
+	      <keyword>r6</keyword>
+	      <keyword>r7</keyword>
+	      <keyword>r8</keyword>
+	      <keyword>r9</keyword>
+	      <keyword>r10</keyword>
+	      <keyword>r11</keyword>
+	      <keyword>r12</keyword>
+	      <keyword>r13</keyword>
+	      <keyword>r14</keyword>
+	      <keyword>r15</keyword>
+	      <keyword>r0b</keyword>
+	      <keyword>r1b</keyword>
+	      <keyword>r2b</keyword>
+	      <keyword>r3b</keyword>
+	      <keyword>r4b</keyword>
+	      <keyword>r5b</keyword>
+	      <keyword>r6b</keyword>
+	      <keyword>r7b</keyword>
+	      <keyword>r8b</keyword>
+	      <keyword>r9b</keyword>
+	      <keyword>r10b</keyword>
+	      <keyword>r11b</keyword>
+	      <keyword>r12b</keyword>
+	      <keyword>r13b</keyword>
+	      <keyword>r14b</keyword>
+	      <keyword>r15b</keyword>
+	      <keyword>r0w</keyword>
+	      <keyword>r1w</keyword>
+	      <keyword>r2w</keyword>
+	      <keyword>r3w</keyword>
+	      <keyword>r4w</keyword>
+	      <keyword>r5w</keyword>
+	      <keyword>r6w</keyword>
+	      <keyword>r7w</keyword>
+	      <keyword>r8w</keyword>
+	      <keyword>r9w</keyword>
+	      <keyword>r10w</keyword>
+	      <keyword>r11w</keyword>
+	      <keyword>r12w</keyword>
+	      <keyword>r13w</keyword>
+	      <keyword>r14w</keyword>
+	      <keyword>r15w</keyword>
+	      <keyword>r0d</keyword>
+	      <keyword>r1d</keyword>
+	      <keyword>r2d</keyword>
+	      <keyword>r3d</keyword>
+	      <keyword>r4d</keyword>
+	      <keyword>r5d</keyword>
+	      <keyword>r6d</keyword>
+	      <keyword>r7d</keyword>
+	      <keyword>r8d</keyword>
+	      <keyword>r9d</keyword>
+	      <keyword>r10d</keyword>
+	      <keyword>r11d</keyword>
+	      <keyword>r12d</keyword>
+	      <keyword>r13d</keyword>
+	      <keyword>r14d</keyword>
+	      <keyword>r15d</keyword>
+	      <keyword>fp0</keyword>
+	      <keyword>fp1</keyword>
+	      <keyword>fp2</keyword>
+	      <keyword>fp3</keyword>
+	      <keyword>fp4</keyword>
+	      <keyword>fp5</keyword>
+	      <keyword>fp6</keyword>
+	      <keyword>fp7</keyword>
+	      <keyword>xmm0</keyword>
+		  <keyword>xmm1</keyword>
+		  <keyword>xmm2</keyword>
+		  <keyword>xmm3</keyword>
+		  <keyword>xmm4</keyword>
+		  <keyword>xmm5</keyword>
+		  <keyword>xmm6</keyword>
+		  <keyword>xmm7</keyword>
+	      <keyword>xmm8</keyword>
+		  <keyword>xmm9</keyword>
+		  <keyword>xmm10</keyword>
+		  <keyword>xmm11</keyword>
+		  <keyword>xmm12</keyword>
+		  <keyword>xmm13</keyword>
+		  <keyword>xmm14</keyword>
+		  <keyword>xmm15</keyword>	
+	</keyword-list>
+
+	<keyword-list _name = "Types" style = "Data Type" case-sensitive="TRUE">
+	      <keyword>m8</keyword>
+	      <keyword>m16</keyword>
+	      <keyword>m32</keyword>
+	      <keyword>m64</keyword>
+	      <keyword>f32</keyword>
+	      <keyword>f64</keyword>
+	      <keyword>f80</keyword>
+	      <keyword>v4i</keyword>
+	      <keyword>v4f</keyword>
+	      <keyword>v2f</keyword>
+	</keyword-list>
+
+	<string _name = "Character Constant" style = "String" end-at-line-end = "TRUE">
+		<start-regex>&apos;</start-regex>
+		<end-regex>&apos;</end-regex>
+	</string>
+
+	<pattern-item _name = "Decimal" style = "Decimal">
+		<regex>\b([1-9][0-9]*|0)([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Floating Point Number" style = "Floating Point">
+		<regex>\b([0-9]+[Ee][-]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([Ee][-]?[0-9]+)?)[fFlL]?</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Hex Number" style = "Decimal">
+		<regex>\b[0-9a-fA-F]+[hH]?\b</regex>
+	</pattern-item>
+
+	<keyword-list _name = "Preprocessor Definitions" style = "Preprocessor" case-sensitive="TRUE"
+		match-empty-string-at-beginning = "FALSE"
+		match-empty-string-at-end = "TRUE"
+		beginning-regex = "^[ \t]*#[ \t]*">
+	      <keyword>define</keyword>
+	      <keyword>undefine</keyword>
+	      <keyword>if</keyword>
+	      <keyword>else</keyword>
+	      <keyword>endif</keyword>
+	      <keyword>ifdef</keyword>
+	      <keyword>ifndef</keyword>
+	      <keyword>COMPILER_OPTION</keyword>
+	</keyword-list>
+
+</language>

@@ -1,0 +1,456 @@
+// View with tab = 4 char
+
+#define TOKEN_STACK_SIZE 	= 4096;
+#define STRUC_SIZE 			= 16384;
+#define MACRO_MAX_SIZE		= 4096;	  // Maximum macro size when being utilised.
+#define STRUC_ENTRY_SIZE 	= 32;
+#define HASH_TABLE_SIZE 	= 50021; 
+						//Size of the hash table.
+						
+#define TOKEN_MAX_SIZE 		= 2048;
+#define HASH_OFFSET 		= 10000000h;
+						//Offset used to store hash within token stack
+						
+#define MAX_LIB_DEPTH 		= 64;
+						// Allow up to 64 deep
+
+#define FILENAME_MAX 		= 256;
+						
+#define PATHS_MAX 			= 256	;
+						// Allow up to 256 paths to held for searching for
+						// includes.
+						
+#define MACRO_DEF_SIZE		= 500000;
+						// Allocate upto 4MB or 500,000 tokens per macro defined.
+						
+#define CR 		= CHAR_CR;
+#define LF 		= CHAR_LF;
+#define TAB 	= CHAR_HT;
+#define SP 		= CHAR_SPACE;
+#define EOF 	= -1;
+
+#define NUM_DECIMAL 	= 0h;
+#define NUM_INTEGER 	= 1h;
+#define NUM_VECTOR		= 2h;
+
+#define SOURCE_ELF 		= 2h;
+#define SOURCE_PE 		= 3h;
+#define SOURCE_ELFO 	= 4h;
+#define SOURCE_DLL		= 5h;
+
+#define TOKEN_OFFSET        		= 1000000h;
+#define TOKEN_AND    				= TOKEN_OFFSET + 0001h;
+#define TOKEN_OR     				= TOKEN_OFFSET + 0002h;
+#define TOKEN_XOR	 				= TOKEN_OFFSET + 0003h;
+#define TOKEN_NOT	 				= TOKEN_OFFSET + 0004h;
+#define TOKEN_EQUATE 				= TOKEN_OFFSET + 0005h;
+#define TOKEN_ADD    				= TOKEN_OFFSET + 0006h;
+#define TOKEN_MINUS  				= TOKEN_OFFSET + 0007h;
+#define TOKEN_MULTIPLY 				= TOKEN_OFFSET + 0008h;
+#define TOKEN_DIVIDE 				= TOKEN_OFFSET + 0009h;
+#define TOKEN_MODULUS 				= TOKEN_OFFSET + 000ah;
+#define TOKEN_S_MULTIPLY 			= TOKEN_OFFSET + 000bh;
+#define TOKEN_S_DIVIDE 				= TOKEN_OFFSET + 000ch;
+#define TOKEN_S_MODULUS 			= TOKEN_OFFSET + 000dh;
+#define TOKEN_RROTATE 				= TOKEN_OFFSET + 000eh;
+#define TOKEN_LROTATE 				= TOKEN_OFFSET + 000fh;
+#define TOKEN_RSHIFT 				= TOKEN_OFFSET + 0010h;
+#define TOKEN_LSHIFT 				= TOKEN_OFFSET + 0011h;
+
+#define TOKEN_EQUALS 				= TOKEN_OFFSET + 0020h;
+#define TOKEN_NOTEQUALS 			= TOKEN_OFFSET + 0021h;
+#define TOKEN_S_LESSTHANEQUALS 		= TOKEN_OFFSET + 0022h;
+#define TOKEN_S_GREATERTHANEQUALS	= TOKEN_OFFSET + 0023h;
+#define TOKEN_S_LESSTHAN 			= TOKEN_OFFSET + 0024h;
+#define TOKEN_S_GREATERTHAN 		= TOKEN_OFFSET + 0025h;
+#define TOKEN_LESSTHANEQUALS 		= TOKEN_OFFSET + 0026h;
+#define TOKEN_GREATERTHANEQUALS		= TOKEN_OFFSET + 0027h;
+#define TOKEN_LESSTHAN 				= TOKEN_OFFSET + 0028h;
+#define TOKEN_GREATERTHAN 			= TOKEN_OFFSET + 0029h;
+
+#define TOKEN_COMMA					= TOKEN_OFFSET + 0030h;
+#define TOKEN_BLOCK_END				= TOKEN_OFFSET + 0031h;
+#define TOKEN_PREPARSER				= TOKEN_OFFSET + 0032h;
+#define TOKEN_FULLSTOP				= TOKEN_OFFSET + 0033h;
+#define TOKEN_MACROARG				= TOKEN_OFFSET + 0034h;
+#define TOKEN_SEMICOLON				= TOKEN_OFFSET + 0035h;
+#define TOKEN_BLOCK_START			= TOKEN_OFFSET + 0036h;
+
+#define TOKEN_STRING 				= TOKEN_OFFSET + 0040h;
+#define TOKEN_END_STRING 			= TOKEN_OFFSET + 0041h;
+#define TOKEN_PARA_START 			= TOKEN_OFFSET + 0042h;
+#define TOKEN_PARA_END 				= TOKEN_OFFSET + 0043h;
+
+#define TOKEN_POINTER 				= TOKEN_OFFSET + 0050h;
+#define TOKEN_ARRAY_START 			= TOKEN_OFFSET + 0051h;
+#define TOKEN_ARRAY_END 			= TOKEN_OFFSET + 0052h;
+
+#define TOKEN_NUM_INTEGER			= TOKEN_OFFSET + 0053h;
+#define TOKEN_NUM_DECIMAL			= TOKEN_OFFSET + 0054h;
+
+//Predefined hashes for reserved keywords.
+//WARNING: If you modify the hash function, or change the hash table
+// size, you will NEED TO RECALCULATE these values.
+
+#ifdef HASH_TABLE_SIZE == 2500007;
+
+	#define HASH_r0 		= 751h;
+	#define HASH_r1 		= 752h;
+	#define HASH_r2 		= 753h;
+	#define HASH_r3 		= 754h;
+	#define HASH_r4 		= 755h;
+	#define HASH_r5 		= 756h;
+	#define HASH_r6 		= 757h;
+	#define HASH_r7 		= 758h;
+	#ifndef i386;
+	#define HASH_r8 		= 759h;
+	#define HASH_r9 		= 75ah;
+	#define HASH_r10 		= 7541h;
+	#define HASH_r11 		= 7542h;
+	#define HASH_r12 		= 7543h;
+	#define HASH_r13 		= 7544h;
+	#define HASH_r14 		= 7545h;
+	#define HASH_r15 		= 7546h;
+	#endif;
+
+	#define HASH_r0b 		= 7563h;
+	#define HASH_r1b 		= 7573h;
+	#define HASH_r2b 		= 7583h;
+	#define HASH_r3b 		= 7593h;
+	#define HASH_r4b 		= 75a3h;
+	#ifndef i386;
+	#define HASH_r5b 		= 75b3h;
+	#define HASH_r6b 		= 75c3h;
+	#define HASH_r7b 		= 75d3h;
+	#define HASH_r8b 		= 75e3h;
+	#define HASH_r9b 		= 75f3h;
+	#define HASH_r10b 		= 383cch;
+	#define HASH_r11b 		= 383dch;
+	#define HASH_r12b 		= 383ech;
+	#define HASH_r13b		= 383fch;
+	#define HASH_r14b 		= 3840ch;
+	#define HASH_r15b 		= 3841ch;
+	#endif;
+	
+	#define HASH_r0w 		= 7578h;
+	#define HASH_r1w 		= 7588h;
+	#define HASH_r2w 		= 7598h;
+	#define HASH_r3w 		= 75a8h;
+	#define HASH_r4w 		= 75b8h;
+	#define HASH_r5w 		= 75c8h;
+	#define HASH_r6w 		= 75d8h;
+	#define HASH_r7w 		= 75e8h;
+	#ifndef i386;
+	#define HASH_r8w 		= 75f8h;
+	#define HASH_r9w 		= 7608h;
+	#define HASH_r10w 		= 383e1h;
+	#define HASH_r11w 		= 383f1h;
+	#define HASH_r12w 		= 38401h;
+	#define HASH_r13w 		= 38411h;
+	#define HASH_r14w 		= 38421h;
+	#define HASH_r15w 		= 38431h;
+	#endif;
+	
+	#ifndef i386;
+	#define HASH_r0d 		= 7565h;
+	#define HASH_r1d 		= 7575h;
+	#define HASH_r2d 		= 7585h;
+	#define HASH_r3d 		= 7595h;
+	#define HASH_r4d 		= 75a5h;
+	#define HASH_r5d 		= 75b5h;
+	#define HASH_r6d 		= 75c5h;
+	#define HASH_r7d 		= 75d5h;
+	#define HASH_r8d 		= 75e5h;
+	#define HASH_r9d 		= 75f5h;
+	#define HASH_r10d 		= 383ceh;
+	#define HASH_r11d 		= 383deh;
+	#define HASH_r12d 		= 383eeh;
+	#define HASH_r13d 		= 383feh;
+	#define HASH_r14d 		= 3840eh;
+	#define HASH_r15d 		= 3841eh;
+	#endif;
+	
+	#define HASH_fp0		= 6d31h;
+	#define HASH_fp1		= 6d32h;
+	#define HASH_fp2		= 6d33h;
+	#define HASH_fp3		= 6d34h;
+	#define HASH_fp4		= 6d35h;
+	#define HASH_fp5		= 6d36h;
+	#define HASH_fp6		= 6d37h;
+	#define HASH_fp7		= 6d38h;
+	
+	#define HASH_zero		= 0031h;
+	#define HASH_main		= 05972h;
+	#define HASH_LOCAL_HEAP = 03f26h;
+	
+	#define HASH_m8 		= 709h;
+	#define HASH_m16 		= 7047h;
+	#define HASH_m32 		= 7063h;
+	#define HASH_m64 		= 7095h;
+	
+	#define HASH_f32		= 6963h;
+	#define HASH_f64		= 6995h;
+	#define HASH_f80		= 69b1h;
+	
+	#define HASH_v4i		= 79aah;
+	#define HASH_v4f		= 79a7h;
+	#define HASH_v2f		= 7987h;
+	
+	#define HASH_struc		= 0a6d4h;
+	
+	#define HASH_proc 		= 3a8bdh;
+	#define HASH_return 	= 27219h;
+	#define HASH_exit 		= 2fe6eh;
+	#define HASH_asm 		= 689eh;
+	#define HASH_while 		= 0cafh;
+	#define HASH_lib 		= 72f3h;
+	#define HASH_if 		= 6f7h;
+	#define HASH_else		= 2f2ffh;
+	#define HASH_push		= 3ac02h;
+	#define HASH_pop		= 7761h;
+	#define HASH_syscall	= 2a3e1h;
+	#define HASH_sysret		= 3869h;
+	#define HASH_call		= 2c796h;
+	#define HASH_jmp		= 7141h;
+	#define HASH_ret		= 78c5h;
+	#define HASH_fdecstp	= 11573h;
+	#define HASH_fincstp	= 257e2h;
+	#define HASH_extern		= 4f00h;
+	#define HASH_ifdef		= 1299ch;
+	#define HASH_endif		= 17a73h;
+	#define HASH_ifndef		= 2614h;
+	#define HASH_define		= 2989dh;
+	#define HASH_undefine	= 1c0e7h;
+	#define HASH_in			= 6ffh;
+	#define HASH_out		= 76c5h;
+	#define HASH_as			= 684h;
+	#define HASH_COMPILER_OPTION = 12fb0h;
+	#define HASH_macro 		= 39fdh;
+	#define HASH_vector 	= 8215h;
+	
+	#define HASH_UTF8		= 1d802h;
+	#define HASH_UTF16		= 2cbb6h;
+	#define HASH_PE			= 546h;
+	#define HASH_DLL		= 490dh;
+	#define HASH_RSRC		= 1a7cdh;
+	#define HASH_ELF		= 4a07h;
+	#define HASH_ELFO		= 0d019h;
+	#define HASH_ENABLESTACKFRAME = 012a56h;
+	#define HASH_DISABLESTACKFRAME = 01eec6h;
+	
+	#define HASH_CARRY		= 2bcdch;
+	#define HASH_NOCARRY	= 33859h;
+	#define HASH_OVERFLOW	= 2f0e2h;
+	#define HASH_NOOVERFLOW	= 3b079h;
+	#define HASH_PARITY		= 3ce63h;
+	#define HASH_NOPARITY	= 362f8h;
+	#define HASH_ZERO		= 219d9h;
+	#define HASH_NOTZERO	= 2a87ch;
+	#define HASH_SIGN		= 1ad28h;
+	#define HASH_NOTSIGN	= 23c2bh;
+
+#else;
+
+#define HASH_if = 000000000000006f7h;
+#define HASH_else = 0000000000000a86eh;
+#define HASH_while = 0000000000000000dh;
+#define HASH_lib = 000000000000072f3h;
+#define HASH_asm = 0000000000000689eh;
+#define HASH_return = 0000000000000299bh;
+#define HASH_exit = 0000000000000b3ddh;
+#define HASH_proc = 00000000000009ac7h;
+#define HASH_push = 00000000000009e0ch;
+#define HASH_pop = 00000000000007761h;
+#define HASH_syscall = 000000000000001cfh;
+#define HASH_sysret = 00000000000003646h;
+#define HASH_fdecstp = 00000000000009374h;
+#define HASH_fincstp = 0000000000000464bh;
+#define HASH_extern = 00000000000006373h;
+#define HASH_define = 000000000000066b5h;
+#define HASH_undefine = 000000000000085b0h;
+#define HASH_ifdef = 00000000000005b1dh;
+#define HASH_endif = 0000000000000ac56h;
+#define HASH_ifndef = 000000000000035efh;
+#define HASH_m8 = 00000000000000709h;
+#define HASH_m16 = 00000000000007047h;
+#define HASH_m32 = 00000000000007063h;
+#define HASH_m64 = 00000000000007095h;
+#define HASH_f32 = 00000000000006963h;
+#define HASH_f64 = 00000000000006995h;
+#define HASH_f80 = 000000000000069b1h;
+#define HASH_struc = 00000000000009a94h;
+#define HASH_call = 00000000000007d05h;
+#define HASH_jmp = 00000000000007141h;
+#define HASH_ret = 000000000000078c5h;
+#define HASH_in = 000000000000006ffh;
+#define HASH_out = 000000000000076c5h;
+#define HASH_as = 00000000000000684h;
+#define HASH_COMPILER_OPTION = 000000000000037d9h;
+#define HASH_vector = 00000000000008215h;
+#define HASH_macro = 000000000000039fdh;
+#define HASH_v4i = 000000000000079aah;
+#define HASH_v4f = 000000000000079a7h;
+#define HASH_v2f = 00000000000007987h;
+#define HASH_iflock = 000000000000020d4h;
+#define HASH_lock = 0000000000000570fh;
+#define HASH_unlock = 00000000000002776h;
+
+#define HASH_zero = 00000000000000031h;
+#define HASH_main		= 05972h;
+#define HASH_LOCAL_HEAP = 03f26h;
+
+#define HASH_r0 = 00000000000000751h;
+#define HASH_r1 = 00000000000000752h;
+#define HASH_r2 = 00000000000000753h;
+#define HASH_r3 = 00000000000000754h;
+#define HASH_r4 = 00000000000000755h;
+#define HASH_r5 = 00000000000000756h;
+#define HASH_r6 = 00000000000000757h;
+#define HASH_r7 = 00000000000000758h;
+#ifndef i386;
+#define HASH_r8 = 00000000000000759h;
+#define HASH_r9 = 0000000000000075ah;
+#define HASH_r10 = 00000000000007541h;
+#define HASH_r11 = 00000000000007542h;
+#define HASH_r12 = 00000000000007543h;
+#define HASH_r13 = 00000000000007544h;
+#define HASH_r14 = 00000000000007545h;
+#define HASH_r15 = 00000000000007546h;
+#endif;
+#define HASH_r0b = 00000000000007563h;
+#define HASH_r1b = 00000000000007573h;
+#define HASH_r2b = 00000000000007583h;
+#define HASH_r3b = 00000000000007593h;
+#ifndef i386;
+#define HASH_r4b = 000000000000075a3h;
+#define HASH_r5b = 000000000000075b3h;
+#define HASH_r6b = 000000000000075c3h;
+#define HASH_r7b = 000000000000075d3h;
+#define HASH_r8b = 000000000000075e3h;
+#define HASH_r9b = 000000000000075f3h;
+#define HASH_r10b = 000000000000075d6h;
+#define HASH_r11b = 000000000000075e6h;
+#define HASH_r12b = 000000000000075f6h;
+#define HASH_r13b = 00000000000007606h;
+#define HASH_r14b = 00000000000007616h;
+#define HASH_r15b = 00000000000007626h;
+#endif;
+#define HASH_r0w = 00000000000007578h;
+#define HASH_r1w = 00000000000007588h;
+#define HASH_r2w = 00000000000007598h;
+#define HASH_r3w = 000000000000075a8h;
+#define HASH_r4w = 000000000000075b8h;
+#define HASH_r5w = 000000000000075c8h;
+#define HASH_r6w = 000000000000075d8h;
+#define HASH_r7w = 000000000000075e8h;
+#ifndef i386;
+#define HASH_r8w = 000000000000075f8h;
+#define HASH_r9w = 00000000000007608h;
+#define HASH_r10w = 000000000000075ebh;
+#define HASH_r11w = 000000000000075fbh;
+#define HASH_r12w = 0000000000000760bh;
+#define HASH_r13w = 0000000000000761bh;
+#define HASH_r14w = 0000000000000762bh;
+#define HASH_r15w = 0000000000000763bh;
+
+#define HASH_r0d = 00000000000007565h;
+#define HASH_r1d = 00000000000007575h;
+#define HASH_r2d = 00000000000007585h;
+#define HASH_r3d = 00000000000007595h;
+#define HASH_r4d = 000000000000075a5h;
+#define HASH_r5d = 000000000000075b5h;
+#define HASH_r6d = 000000000000075c5h;
+#define HASH_r7d = 000000000000075d5h;
+#define HASH_r8d = 000000000000075e5h;
+#define HASH_r9d = 000000000000075f5h;
+#define HASH_r10d = 000000000000075d8h;
+#define HASH_r11d = 000000000000075e8h;
+#define HASH_r12d = 000000000000075f8h;
+#define HASH_r13d = 00000000000007608h;
+#define HASH_r14d = 00000000000007618h;
+#define HASH_r15d = 00000000000007628h;
+#endif;
+#define HASH_fp0 = 00000000000006d31h;
+#define HASH_fp1 = 00000000000006d32h;
+#define HASH_fp2 = 00000000000006d33h;
+#define HASH_fp3 = 00000000000006d34h;
+#define HASH_fp4 = 00000000000006d35h;
+#define HASH_fp5 = 00000000000006d36h;
+#define HASH_fp6 = 00000000000006d37h;
+#define HASH_fp7 = 00000000000006d38h;
+#define HASH_CARRY = 00000000000006bc9h;
+#define HASH_NOCARRY = 00000000000009bdch;
+#define HASH_OVERFLOW = 000000000000058c4h;
+#define HASH_NOOVERFLOW = 00000000000005558h;
+#define HASH_PARITY = 000000000000039adh;
+#define HASH_NOPARITY = 0000000000000ab4dh;
+#define HASH_ZERO = 000000000000092adh;
+#define HASH_NOTZERO = 00000000000000a15h;
+#define HASH_SIGN = 000000000000025fch;
+#define HASH_NOTSIGN = 00000000000006129h;
+#define HASH_UTF8 = 000000000000050d6h;
+#define HASH_UTF16 = 000000000000078b9h;
+#define HASH_ELF = 00000000000004a07h;
+#define HASH_ELFO = 00000000000000c52h;
+#define HASH_PE = 00000000000000546h;
+#define HASH_DLL = 0000000000000490dh;
+#define HASH_RSRC = 000000000000020a1h;
+#define HASH_ENABLESTACKFRAME = 00000000000004e71h;
+#define HASH_DISABLESTACKFRAME = 0000000000000559ch;
+#define HASH_EXPLICITEXPORT = 04398h;
+#define HASH_xmm0 = 0000000000000520fh;
+#define HASH_xmm1 = 00000000000005210h;
+#define HASH_xmm2 = 00000000000005211h;
+#define HASH_xmm3 = 00000000000005212h;
+#define HASH_xmm4 = 00000000000005213h;
+#define HASH_xmm5 = 00000000000005214h;
+#define HASH_xmm6 = 00000000000005215h;
+#define HASH_xmm7 = 00000000000005216h;
+#define HASH_xmm8 = 00000000000005217h;
+#define HASH_xmm9 = 00000000000005218h;
+#define HASH_xmm10 = 00000000000008cc3h;
+#define HASH_xmm11 = 00000000000008cc4h;
+#define HASH_xmm12 = 00000000000008cc5h;
+#define HASH_xmm13 = 00000000000008cc6h;
+#define HASH_xmm14 = 00000000000008cc7h;
+#define HASH_xmm15 = 00000000000008cc8h;
+
+#endif;
+
+#define TYPE_M8			= 0001h;
+#define TYPE_M16		= 0002h;
+#define TYPE_M32		= 0003h;
+#ifndef i386;
+#define TYPE_M64		= 0004h;
+#define TYPE_M128		= 0005h;
+#endif;
+
+#define TYPE_F32		= 0008h;
+#define TYPE_F64		= 0009h;
+#define TYPE_F80		= 000ah;
+
+#define TYPE_V4I		= 000bh;
+#define TYPE_V4F		= 000ch;
+#define TYPE_V2F		= 000dh;
+
+#define TYPE_ARRAY		= 0010h;
+#define TYPE_PROC		= 0020h;
+#define TYPE_EPROC		= 0040h;
+#define TYPE_KEYWORD	= 0080h;
+
+#define TYPE_REG		= 0100h;
+#define TYPE_REG_FPU	= 0200h;
+#define TYPE_REG_SHORT	= 0400h;
+#define TYPE_FLAG		= 0800h;
+#define TYPE_REG_XMM	= 40000h;
+
+#define TYPE_LOCAL		= 1000h;
+#define TYPE_GLOBAL		= 2000h;
+#define TYPE_DEFINE		= 4000h;
+#define TYPE_STRUC		= 8000h;
+#define TYPE_VSTRUC		= 10000h;
+#define TYPE_ELIB		= 20000h;
+
+#define TYPE_MACRO		= 80000h;
+						
+#define TYPE_RESERVED	= 40000000h;

@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+<MODE>
+  <PROPS>
+    <PROPERTY NAME="lineComment" VALUE="//" />
+    <PROPERTY NAME="wordBreakChars"
+    VALUE=",+-=&lt;&gt;/?^&amp;*" />
+    <!-- Auto indent -->
+    <PROPERTY NAME="indentOpenBrackets" VALUE="{" />
+    <PROPERTY NAME="indentCloseBrackets" VALUE="}" />
+    <PROPERTY NAME="indentNextLine"
+    VALUE="\s*(((if|while)\s*\(|else\s*|else\s+if\s*\(|for\s*\(.*\))[^{;]*)" />
+    <!-- set this to 'true' if you want to use GNU coding style -->
+    <PROPERTY NAME="doubleBracketIndent" VALUE="false" />
+    <PROPERTY NAME="lineUpClosingBracket" VALUE="true" />
+  </PROPS>
+  <RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE"
+  DIGIT_RE="([[:xdigit:]]+[h]?|[[:digit:]]+(e[[:digit:]]*)?[lLdDfF]?)">
+
+    <SPAN TYPE="LITERAL1" NO_LINE_BREAK="TRUE">
+      <BEGIN>'</BEGIN>
+      <END>'</END>
+    </SPAN>
+    <!-- preprocessor statements -->
+    <EOL_SPAN TYPE="COMMENT2">//</EOL_SPAN>
+    <EOL_SPAN TYPE="KEYWORD2" DELEGATE="PP">#</EOL_SPAN>
+    <SEQ TYPE="OPERATOR">=</SEQ>
+    <SEQ TYPE="OPERATOR">!</SEQ>
+    <SEQ TYPE="OPERATOR">&gt;</SEQ>
+    <SEQ TYPE="OPERATOR">&lt;</SEQ>
+    <SEQ TYPE="OPERATOR">+</SEQ>
+    <SEQ TYPE="OPERATOR">-</SEQ>
+    <SEQ TYPE="OPERATOR">/</SEQ>
+    <SEQ TYPE="OPERATOR">*</SEQ>
+    <SEQ TYPE="OPERATOR">~</SEQ>
+    <SEQ TYPE="OPERATOR">&gt;</SEQ>
+    <SEQ TYPE="OPERATOR">&lt;</SEQ>
+    <SEQ TYPE="OPERATOR">%</SEQ>
+    <SEQ TYPE="OPERATOR">&amp;</SEQ>
+    <SEQ TYPE="OPERATOR">|</SEQ>
+    <SEQ TYPE="OPERATOR">^</SEQ>
+    <SEQ TYPE="OPERATOR">~</SEQ>
+    <SEQ TYPE="OPERATOR">}</SEQ>
+    <SEQ TYPE="OPERATOR">{</SEQ>
+    <MARK_PREVIOUS AT_WHITESPACE_END="TRUE" EXCLUDE_MATCH="TRUE"
+    TYPE="LABEL">:</MARK_PREVIOUS>
+    <!-- Function calls -->
+    <MARK_PREVIOUS TYPE="FUNCTION" EXCLUDE_MATCH="TRUE">
+    (</MARK_PREVIOUS>
+    <KEYWORDS>
+      <KEYWORD3>m8</KEYWORD3>
+      <KEYWORD3>m16</KEYWORD3>
+      <KEYWORD3>m32</KEYWORD3>
+      <KEYWORD3>m64</KEYWORD3>
+      <KEYWORD3>f32</KEYWORD3>
+      <KEYWORD3>f64</KEYWORD3>
+      <KEYWORD3>f80</KEYWORD3>
+      <KEYWORD3>r0</KEYWORD3>
+      <KEYWORD3>r1</KEYWORD3>
+      <KEYWORD3>r2</KEYWORD3>
+      <KEYWORD3>r3</KEYWORD3>
+      <KEYWORD3>r4</KEYWORD3>
+      <KEYWORD3>r5</KEYWORD3>
+      <KEYWORD3>r6</KEYWORD3>
+      <KEYWORD3>r7</KEYWORD3>
+      <KEYWORD3>r8</KEYWORD3>
+      <KEYWORD3>r9</KEYWORD3>
+      <KEYWORD3>r10</KEYWORD3>
+      <KEYWORD3>r11</KEYWORD3>
+      <KEYWORD3>r12</KEYWORD3>
+      <KEYWORD3>r13</KEYWORD3>
+      <KEYWORD3>r14</KEYWORD3>
+      <KEYWORD3>r15</KEYWORD3>
+      <KEYWORD3>r0b</KEYWORD3>
+      <KEYWORD3>r1b</KEYWORD3>
+      <KEYWORD3>r2b</KEYWORD3>
+      <KEYWORD3>r3b</KEYWORD3>
+      <KEYWORD3>r4b</KEYWORD3>
+      <KEYWORD3>r5b</KEYWORD3>
+      <KEYWORD3>r6b</KEYWORD3>
+      <KEYWORD3>r7b</KEYWORD3>
+      <KEYWORD3>r8b</KEYWORD3>
+      <KEYWORD3>r9b</KEYWORD3>
+      <KEYWORD3>r10b</KEYWORD3>
+      <KEYWORD3>r11b</KEYWORD3>
+      <KEYWORD3>r12b</KEYWORD3>
+      <KEYWORD3>r13b</KEYWORD3>
+      <KEYWORD3>r14b</KEYWORD3>
+      <KEYWORD3>r15b</KEYWORD3>
+      <KEYWORD3>r0w</KEYWORD3>
+      <KEYWORD3>r1w</KEYWORD3>
+      <KEYWORD3>r2w</KEYWORD3>
+      <KEYWORD3>r3w</KEYWORD3>
+      <KEYWORD3>r4w</KEYWORD3>
+      <KEYWORD3>r5w</KEYWORD3>
+      <KEYWORD3>r6w</KEYWORD3>
+      <KEYWORD3>r7w</KEYWORD3>
+      <KEYWORD3>r8w</KEYWORD3>
+      <KEYWORD3>r9w</KEYWORD3>
+      <KEYWORD3>r10w</KEYWORD3>
+      <KEYWORD3>r11w</KEYWORD3>
+      <KEYWORD3>r12w</KEYWORD3>
+      <KEYWORD3>r13w</KEYWORD3>
+      <KEYWORD3>r14w</KEYWORD3>
+      <KEYWORD3>r15w</KEYWORD3>
+      <KEYWORD3>r0d</KEYWORD3>
+      <KEYWORD3>r1d</KEYWORD3>
+      <KEYWORD3>r2d</KEYWORD3>
+      <KEYWORD3>r3d</KEYWORD3>
+      <KEYWORD3>r4d</KEYWORD3>
+      <KEYWORD3>r5d</KEYWORD3>
+      <KEYWORD3>r6d</KEYWORD3>
+      <KEYWORD3>r7d</KEYWORD3>
+      <KEYWORD3>r8d</KEYWORD3>
+      <KEYWORD3>r9d</KEYWORD3>
+      <KEYWORD3>r10d</KEYWORD3>
+      <KEYWORD3>r11d</KEYWORD3>
+      <KEYWORD3>r12d</KEYWORD3>
+      <KEYWORD3>r13d</KEYWORD3>
+      <KEYWORD3>r14d</KEYWORD3>
+      <KEYWORD3>r15d</KEYWORD3>
+      <KEYWORD3>fp0</KEYWORD3>
+      <KEYWORD3>fp1</KEYWORD3>
+      <KEYWORD3>fp2</KEYWORD3>
+      <KEYWORD3>fp3</KEYWORD3>
+      <KEYWORD3>fp4</KEYWORD3>
+      <KEYWORD3>fp5</KEYWORD3>
+      <KEYWORD3>fp6</KEYWORD3>
+      <KEYWORD3>fp7</KEYWORD3>
+      <KEYWORD2>ZERO</KEYWORD2>
+      <KEYWORD2>NOTZERO</KEYWORD2>
+      <KEYWORD2>PARITY</KEYWORD2>
+      <KEYWORD2>NOPARITY</KEYWORD2>
+      <KEYWORD2>CARRY</KEYWORD2>
+      <KEYWORD2>NOCARRY</KEYWORD2>
+      <KEYWORD2>OVERFLOW</KEYWORD2>
+      <KEYWORD2>NOOVERFLOW</KEYWORD2>
+      <KEYWORD2>SIGN</KEYWORD2>
+      <KEYWORD2>NOTSIGN</KEYWORD2>
+      <KEYWORD1>asm</KEYWORD1>
+      <KEYWORD1>struc</KEYWORD1>
+      <KEYWORD1>if</KEYWORD1>
+      <KEYWORD1>else</KEYWORD1>
+      <KEYWORD1>while</KEYWORD1>
+      <KEYWORD1>push</KEYWORD1>
+      <KEYWORD1>pop</KEYWORD1>
+      <KEYWORD1>proc</KEYWORD1>
+      <KEYWORD1>fincstp</KEYWORD1>
+      <KEYWORD1>fdecstp</KEYWORD1>
+      <KEYWORD1>syscall</KEYWORD1>
+      <KEYWORD1>sysret</KEYWORD1>
+      <KEYWORD1>break</KEYWORD1>
+      <KEYWORD1>exit</KEYWORD1>
+      <KEYWORD1>return</KEYWORD1>
+      <KEYWORD1>in</KEYWORD1>
+      <KEYWORD1>as</KEYWORD1>
+      <KEYWORD1>lib</KEYWORD1>
+      <KEYWORD1>extern</KEYWORD1>
+      <KEYWORD1>call</KEYWORD1>
+      <KEYWORD1>jmp</KEYWORD1>
+      <KEYWORD1>ret</KEYWORD1>
+      <KEYWORD1>out</KEYWORD1>
+	  <KEYWORD1>iflock</KEYWORD1>
+	  <KEYWORD1>lock</KEYWORD1>
+	  <KEYWORD1>unlock</KEYWORD1>
+      <KEYWORD2>main</KEYWORD2>
+    </KEYWORDS>
+  </RULES>
+  <RULES SET="INCLUDE" DEFAULT="KEYWORD2" />
+  <RULES SET="PP" DEFAULT="KEYWORD2" IGNORE_CASE="FALSE"
+  HIGHLIGHT_DIGITS="TRUE"
+  DIGIT_RE="([[:xdigit:]]+[h]?|[[:digit:]]+(e[[:digit:]]*)?[lLdDfF]?)">
+
+    <EOL_SPAN TYPE="COMMENT2">//</EOL_SPAN>
+    <!-- Directives -->
+    <KEYWORDS>
+      <MARKUP>define</MARKUP>
+      <MARKUP>undefine</MARKUP>
+      <MARKUP>if</MARKUP>
+      <MARKUP>else</MARKUP>
+      <MARKUP>endif</MARKUP>
+      <MARKUP>ifdef</MARKUP>
+      <MARKUP>ifndef</MARKUP>
+      <MARKUP>COMPILER_OPTION</MARKUP>
+    </KEYWORDS>
+  </RULES>
+</MODE>

@@ -1,0 +1,24 @@
+// Application "Hello World" for Linux;
+
+#COMPILER_OPTION UTF8;
+
+//lib 'b0_libc.b0';
+extern fprintf();
+extern stdout();  // This is actually an external bit of data!
+
+proc main(){
+	push r6;
+	r6 = r7;
+	r4 = &stdout();
+	r4 = [r4];
+	r5 = &'%s';
+	r5 = r5 + 2;
+	r3 = &'This string has just been printed by glibc/fprintf()\n';
+	r3 = r3 + 2;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	
+	exit(0);
+}
+

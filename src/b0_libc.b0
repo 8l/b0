@@ -1,0 +1,443 @@
+// Generic call wrappers for libc
+
+#define LOCAL_HEAP = 10000h;			// Allocate 1MB for local thread heap;
+
+#define STDIN  = 00h;
+#define STDOUT = 01h;
+#define STDERR = 02h;
+
+#define CLOCKS_PER_SEC = 1000000;  //POSIX value
+
+//External Data!
+
+m64 _stdin;
+m64 _stdout;
+m64 _stderr;
+
+#ifdef FREEBSD_LIBC;
+
+extern __stdinp();
+extern __stdoutp();
+extern __stderrp();
+
+proc __Init_libc(){
+	//Initialise the default file handles!
+	push r1;
+	r1 = &__stdinp();
+	r1 = [r1];
+	_stdin = r1;
+	r1 = &__stdoutp();
+	r1 = [r1];
+	_stdout = r1;
+	r1 = &__stderrp();
+	r1 = [r1];
+	_stderr = r1;
+	pop r1;
+}
+#else;
+	#ifdef SOLARIS;
+	
+	extern __iob();
+	
+	proc __Init_libc(){
+		//Initialise the default file handles!
+		push r1;
+		r1 = &__iob();
+		_stdin = r1;
+		r1 = &__iob();
+		r1 = r1 + 128; 	//sizeof(_NFILE);
+		_stdout = r1;
+		r1 = &__iob();
+		r1 = r1 + 256;	// sizeof(_NFILE);
+		_stderr = r1;
+		pop r1;
+	}
+	
+	#else;
+	// Generic glibc based.
+	extern stdin();
+	extern stdout();
+	extern stderr();
+	
+	proc __Init_libc(){
+		//Initialise the default file handles!
+		push r1;
+		r1 = &stdin();
+		r1 = [r1];
+		_stdin = r1;
+		r1 = &stdout();
+		r1 = [r1];
+		_stdout = r1;
+		r1 = &stderr();
+		r1 = [r1];
+		_stderr = r1;
+		pop r1;
+	}
+	
+	#endif;
+#endif;
+
+//External Functions;
+
+extern calloc();
+extern fgetc();
+extern fclose();
+extern remove();
+extern time();
+extern fopen();
+extern ftell();
+extern fprintf();
+extern getenv();
+extern rewind();
+extern munmap();
+extern free();
+extern getpid();
+
+proc _fgetc(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fgetc();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fclose(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fclose();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _remove(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = string;
+	r4 = r4 + 2;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call remove();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _clock() {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	r4 = 0;
+	call time();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _fopen(file2open, acl) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = file2open;
+	r4 = r4 + 2;
+	r5 = acl;
+	r5 = r5 + 2;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fopen();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _calloc(record_size, num_records) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = record_size;
+	r5 = num_records;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call calloc();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _munmap(ptr, size){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15; 
+	r4 = ptr;
+	r5 = size;
+	r0 = 0;
+	//call munmap();
+	call free();
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _ftell(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call ftell();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc _getenv(string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = string;
+	r4 = r4 + 2;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call getenv();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+
+};
+
+proc _getpid(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call getpid();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc _rewind(handle) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call rewind();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+
+};
+
+proc _settmppath(){
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r0 = 0;
+	r2 = &'/tmp/';
+	r3 = &tmp_directory;
+	strcpy(r3, r2);
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+proc echo_string(handle, string) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	handle = r4;
+	r5 = &'%s';
+	r5 = r5 + 2;
+	r3 = string;
+	r3 = r3 + 2;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_integer(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	handle = r4;
+	r5 = &'%ld';
+	r5 = r5 + 2;
+	r3 = integer;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_character(handle, character) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}	
+	handle = r4;
+	r5 = &'%c';
+	r5 = r5 + 2;
+	r3 = character;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+proc echo_float(handle) {	 // only does fp0
+	push r1;
+	m8[256] fp0_string;
+	r0 = &fp0_string;
+	ftoa(r0);
+	r0 = &fp0_string;
+	r1 = handle;
+	echo_string(r1, r0);	
+	pop r1;
+};
+
+proc echo_hex(handle, integer) {
+	push r1, r2, r3, r4, r5, r8, r9, r10, r11, r12, r13, r14, r15;
+	r4 = handle;
+	r0 = STDIN;
+	if(r4 == r0){
+		r4 = _stdin;
+	} else {
+		r0 = STDOUT;
+		if(r4 == r0){
+			r4 = _stdout;
+		} else {
+			r0 = STDERR;
+			if(r4 == r0){
+				r4 = _stderr;
+			}
+		}
+	}
+	handle = r4;
+	r5 = &'0%lxh';
+	r5 = r5 + 2;
+	r3 = integer;
+	push r6;
+	r6 = r7;
+	r0 = 0;
+	call fprintf();
+	pop r6;
+	pop r15, r14, r13, r12, r11, r10, r9, r8, r5, r4, r3, r2, r1;
+	return(r0);
+};
+
+// This is a wrapper for _calloc!
+proc memInit(){
+	push r4, r5;
+	r4 = LOCAL_HEAP;	// Let's get our local heap size
+	r5 = 1;
+	r0 = 0;
+	call calloc();
+	r15 = r0;
+	pop r5, r4;
+	return(r15);
+}
+

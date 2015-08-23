@@ -1,0 +1,33 @@
+// Application "Hello World" for Linux;
+
+#define LOCAL_HEAP = 100000h;			// Allocate 1MB for local thread heap;
+
+m8 my_string = 048h,065h,06ch,06ch,06fh,020h,057h,06fh,072h,06ch,064h,020h,066h,072h,06fh,06dh,020h,042h,030h,0ah,0;
+
+proc memInit(){
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;			// Get top of memory
+	r0 = 045;			// sys_brk
+	syscall;
+	r15 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;			// set new top of bss
+	return(r15);
+}
+
+proc echo(_ptr, _size){
+	r0 = 4;						// sys_write
+	r1 = 1;						// file handle = stdout
+	r2 = _ptr;					// pointer to string to print
+	r3 = _size;					// String size
+	syscall;
+}
+
+proc main(){
+	r6 = memInit();				// Setup local variable buffer!
+	r0 = &my_string;
+	echo(r0, 21);
+	exit(0);
+}
+

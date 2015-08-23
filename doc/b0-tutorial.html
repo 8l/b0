@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" title="Modern" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" media="print" title="Modern" />
+		<script type="text/javascript" src="css/ui.js"></script>
+		<title>The word according to b0...</title>
+	</head>
+	<body>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="#styles" title="Increase font size" onclick="changeFontSize(1); return false;"><img src="css/fontsizelarger.gif" alt="Increase font size" /></a>
+				<a href="#styles" title="Decrease font size" onclick="changeFontSize(-1); return false;"><img src="css/fontsizesmaller.gif" alt="Decrease font size" /></a>
+				<a href="#styles" title="Toggle font serif" onclick="toggleSerif(); return false;"><img src="css/fontseriftoggle.gif" alt="Toggle font serif" /></a>
+				<a href="#styles" title="Revert styles to default" onclick="revertStyles(); return false;"><img src="css/reset.gif" alt="Revert styles" /></a>
+			</p>
+			<hr />
+			<p class="align_center">
+			<a href="b0.html#About"><img src="css/about.png" alt="About"/></a>&nbsp;
+			<a href="b0.html#Requirements"><img src="css/requirements.png" alt="Requirements"/></a>&nbsp;
+			<a href="b0.html#Documents"><img src="css/documents.png" alt="Documents"/></a>&nbsp;
+			<a href="b0-screenshots.html"><img src="css/scrnshots.png" alt="Screenshots"/></a>&nbsp;
+			<a href="forum/index.php"><img src="css/forum.png" alt="Forum"/></a>&nbsp;
+			<a href="b0.html#Downloads"><img src="css/downloads.png" alt="Downloads"/></a>
+			</p>
+			<hr />
+		</div>
+
+<div id="ContentArea">
+<h1><img alt="b0 Logo" src="css/b0.png" height="32" /> The word according to b0...</h1>
+<p>The only b0 tutorial and massive HOW-TO for the b0 language.</p>
+<p>This is being written by myself, as a help to other people
+interested in obscure langauges, and to those interested in gaining
+another insight into the language.</p>
+<p>This document is less formal than the manual which describes the
+langauge itself, which is aimed at seasoned developers that are
+familar with AMD64 assembly and other High Level Langauges. In fact
+this document doesn't contain a contents page or index. It is a
+pure organic document that was and will continue to be developed in
+my spare time where I'm not working on the compiler or supporting
+libraries. One could think of this tutorial, more of a blog than a
+tutorial, but I do show you some cool stuff, that is both related
+and not related to b0.</p>
+<p>A quick word about me. I do work professionally in the
+Information Technology industry, however as a Systems
+Administrator. My interest in programming, especially language
+development and operating systems is purely as a hobby. My formal
+education in IT is limited, with most of my formal education being
+in communication technologies, particularly radio based
+communications, (RF engineering). I am a member of several formal
+IT organisations including the IEEE Computer Society, but most of
+these are in relation to my every day job. I'm married with one baby boy on the way,
+and do enjoy a Wild Turkey and Coke, or some quality aged vodka,
+prefered straight (chilled to below zero) or with lemon/lime soda
+on occasion. I'm running Solaris Express Developer Edn 09/07 x64 on my home b0xen, with
+my work laptop running MS Windows Vista x64 Business for Windows testing.
+In the past I've run FreeBSD 5.1 - 6.1 (AMD64), Windows XP x64, CRUX Linux v2.1 AMD64 whilst
+developing b0. Before b0, I was using Windows NT 4.0, Windows 2000, Redhat 5 something, Sun Solaris 9 x86,
+Mandrake Linux, in addition to the usual DOS/Win3.11, Win95/98SE stuff that everybody
+else seems to run. So I guess I have a wide berth of knowlesge regarding OSes. I also
+generally listen to alternative music, but at the heavier end, (the
+Red Hot Chili Peppers, The Offspring, Marilyn Manson,
+Korn, Nirvana, Rage Against The Machine, etc). In spare time, I enjoy going for the
+occasional run (I compete regularly in the local half-marathons), and enjoy
+going to the gym to lift heavy stuff...</p>
+<p>b0 was original developed as a low level language with high
+level constructs to allow rapid development of both operating
+systems and general applications, to the point where following the
+exact machine state (at the hardware level) can be followed just by
+reading the source code. This differs from most other languages, in
+that they abstract the hardware to the point where you are
+programming for a fictional architecture rather than the true
+underlying hardware.</p>
+<p>Really, I became sick of trying to read through both VC++ and
+gcc assembler listing noticed areas that HUGE improvements can be
+made, or alternatively having to deal with some of the crap that
+comes along with programming pure x86 assembler. (like trying to
+remember signed/unsigned jumps and when short forms can be
+used, etc).</p>
+<p>Other languages such as C (which is often described as the
+cross-platform assembly language), abstract the underlying the
+architecture, to the point where the underlying architecture no
+longer applies. b0 also abstracts the underlying the architecture,
+but only enough to help the developer make full use of the
+underlying architecture, without having to leave that level.</p>
+<p>b0 provides an environment which models the environment as
+provided by all AMD64 based processors. Rather than using the defined nmenonics by the
+manufacturer, the programmer uses the general mathematical
+terminology that we all learn in school.</p>
+<p>The strange, yet wonderful b0 environment. (Oh crap, a somewhat
+real section heading).</p>
+<p>The b0 environment is based on the AMD64 architecture, however
+shouldn't be too hard to port to other 64bit architectures, or even
+other 32bit environments. The general environment provides 16 64bit
+registers or slots to hold temporary values, in a single address
+space which can be up to 2<sup>64</sup> bytes in size, or roughly
+16284 Petabytes. However due to current architectural limits, in
+reality this is only 1TB (or 2<sup>40</sup> bytes). But never fear,
+the b0 compiler does NOT impose any of these limits.</p>
+<p>The only way to operate on varibles are in the native 64bit
+register size. This is very similar to working in assembly, you
+only get what the CPU provides. So before you can work on a
+variable you must load into one of the registers, but some of the
+registers are reserved for special uses. Most notable are r6 and
+r7. Both of these are used constantly by the CPU. r6 is used as the
+base for the local variables within a procedure, which allow the
+for recurvise procedures. r7 is used for the stack pointer, which
+points to the current position of the stack. The stack can hold
+temporary values, values being passed to other procedures (that use
+the C calling convention) and most importantly the return addresses
+for procedures which call other procedures and the bases for those
+procedures.</p>
+<p>Some of the other registers can only be used in certain
+operations or are effected by certain operations. Most notable are
+r0 and r3, which are used in division and mulplication operations.
+Use of these registers is explained in the manual, and if you keep
+reading somewhere in here...</p>
+<p>To load a register, either simply make the register equal to the
+variable, or alternatively use a pointer (which is stored in a
+register) to load a register. eg "<code>r0 = my_var;</code>". Hay,
+lets back up a minute, I forgot to tell you how to define a
+variable. Well, that's simple, just start the type of base it is,
+the size if it's an array or multiple of the base, then the name.
+If it's a global variable then we can pre-initialise the variable
+to a constant value, just reminder that's for global variables
+only.</p>
+<p>Now let's get back to creating something. All the basic math
+operators are available, as well as the standard binary math/logic
+operators, including AND, OR, NOT, XOR, Shifts and Rotates. So
+let's define 2 16bit variables, assign values to them, add them
+together and store the result in another variable. I could do this
+all using registers, but think of regsiters being for temporal
+storage, rather than permanent storage. (Actually in SMP
+environments, you get many machines states, so storing stuff in
+memory is *really* important, especially in threaded
+applications).</p>
+<p>First let's define our two variables and the destination
+variable. If you can't work out what variable is what from the
+name, then you shouldn't be reading this tutorial, and reading
+something like some BASIC tutorial.</p>
+<pre>
+m16 source1;
+m16 source2;
+m16 dest;
+</pre>
+<p>Next, becuase all operations must be done using registers, we
+need to choose some registers to load the variables into. Let's
+choose r10 and r11. No real reason for those, but just don't use r6
+and r7...</p>
+<pre>
+r10 = source1;
+r11 = source2;
+</pre>
+<p>Now add them together, and store the result in r10;</p>
+<pre>
+r10 = r10 + r11;
+</pre>
+<p>Now store the result back into the memory location;</p>
+<pre>
+dest = r10;
+</pre>
+<p>See that was easy wasn't it? For a complete application that you
+can compile, just copy and paste the following into another file,
+save it, and run it through the compiler. Then assemble it using
+fasm!</p>
+<pre>
+----------------8&lt;------------------------
+// My Test Program...
+m16 source1 = 16;
+m16 source2 = 10;
+m16 dest;
+
+proc main(){
+  r10 = source1;
+  r11 = source2;
+  r10 = r10 + r11;
+  dest = r10;
+}
+----------------8&lt;------------------------
+Compile using:  b0 -felf ./example1.b0
+Assemble using: fasm ./example1.asm ./le
+</pre>
+<p>What you'll notice about the above, that I have added in some
+fluff so that it is legal source for b0. The only requirement for
+any application, is that it contains one and only one valid main()
+procedure. Main() is the entry point to the application, and it
+also finishes at the end of main(), unless you call the exit()
+procedure elsewhere. But anyway, I'll explain the program line by
+line:</p>
+<p>The first line is a comment, that briefly describes the source
+code file, typically you include the application name, its purpose,
+the author and the licence that the application is released under.
+(All my stuff, I tend to release it under the BSD Licence).</p>
+<p>The next 3 lines, define 3x 16bit variables. The first 2 are
+pre-initialised to a value, in this case 16 and 10 respectively.
+Line 5 declares, the main() procedure. Line 6 and 7 load the values
+into the registers, and then line 8 adds the values together. Line
+9 stores the result, and since we are at the end of main, we
+exit!</p>
+<p>Now regarding variables, they can be either global or local.
+That is, they can be available to every procedure, or only to the
+procedure, in which the variable is defined. Also, variables can be
+defined at any time within the source code, the only requirement is
+that they must be defined before they are used. This is unlike C
+and most other HLLs. eg:</p>
+<pre>
+proc main(){
+  m32 source1;
+  m32 source2;
+  r0 = source1;
+  r9 = source2;
+  m64 dest;
+  r0 = r0 * r9;
+  dest = r0;
+}
+</pre>
+<p>is perfectly valid, as all variables are defined before they are
+used. As you'll see, we'll have no idea what the result will be, as
+we haven't defined the actual contents of the variables.
+(Pre-initialisation of variables is only available when defining
+global variables).</p>
+<p>Local variables are also really good for recursive procedures,
+that is procedures that call themselves! eg:</p>
+<pre>
+proc recursive(value){
+  m64 new_value;
+  r0 = value;
+  r0 = r0 + 2;
+  new_value = r0;
+  r1 = 12;
+  if (r0 &lt; r1){
+    recurvise(r0);
+  }
+}
+</pre>
+<p>for each call to itself, the variable 'new_value' will be
+distinct, and won't overwrite the previous results or stored
+values.</p>
+<p>Something that may be asked is, why allow preinitialisation of
+globals, but not local variables? Well, it has got to do with the
+difference between global and local variables. Global variables
+exist at a single location fixed in the address space. However
+local variables can exist anywhere, and in multiple places (as the
+local of a local variable is pointed to by r6), so it's hard for
+the assembler to know exactly where the variables will be at
+run-time.</p>
+<p>Since all applications require a main() procedure, I guess I
+better explain how to define procedures and how local variables are
+passed between different procedures, as well some thoughts on the
+different call methodologies.</p>
+<p>Procedures are selected pieces of code, that are grouped
+together to perform a desired task, multiple times. The old rule,
+if you do it more than 3 times the same way, make it a procedure!
+There are 2 types of procedures in b0, local and external. I'll
+concentrate firstly on local procedures, then go over external
+procedures.</p>
+<p>Local procedures are defined using the 'proc' keyword, followed
+by the procedure name, with any passed parameters that are
+required. In the current implementation, those passed variables are
+NOT enforced, so you could define a procedure to accept 3
+parameters, but have another procedure call it with 1 parameter.
+This is perfectly legal, and I'll explain why. So to define a
+procedure, it's:</p>
+<pre>
+proc my_procedure (parameter1, parameter2, etc) {
+}
+</pre>
+<p>All procedures return a value in r0, which is typically an exit
+code. All parameters are restricted to type m64 and can be a
+register, a pointer (or string, with auto pointer assignment), or
+an immediate value. Parameters that are defined are treated exactly
+as local variables. The first parameter on procedure entry is
+located at [r6], the next at [r6+8], the next at [r6+10h], and so
+on. The first defined local variable will immediately follow, those
+defined parameters. So for the following example:</p>
+<pre>
+proc gtk_draw_line(x1, y1, x2, y2, col, alpha, alias){
+  m16 snippet1;
+  m32 snippet2;
+  somecode();
+}
+</pre>
+<p>The parameters would be set as within the local variable
+frame:</p>
+<pre>
+[r6]     - x1
+[r6+8]   - y1
+[r6+10h] - x2
+[r6+18h] - y2
+[r6+20h] - col
+[r6+28h] - alpha
+[r6+30h] - alias
+[r6+38h] - snippet1
+[r6+3ah] - snippet2
+</pre>
+<p>If a calling procedure was to call the above function, but with
+only 2 parameters, than the last 5 parameters would be undefined,
+and realistically will contain values that are stored in those
+memory locations. If however a procedure adds an 8th parameter, it
+will overwrite the snippet1 and snippet2 local variables, and in
+effect preinitialise them! Smart use of the this overloading
+function can have some peformance advantages, as well as some
+mighty portablity and maintainability disadvantages.</p>
+<p>Above I mentioned the local variable frame, well this is a block
+of memory that holds the local variables for the current running
+procedure. It is pointed to by r6, hence r6 is absolutely critical
+to the running of the system, especially if you want to maintain a
+bug-free and stable system.</p>
+<p>The other type of procedure are external procedures. These are
+procedures contained in code that is compiled separately to your b0
+application, and can in fact be written in another language, either
+assembly, C, C++, pascal and any other compiled language. These
+procedures are defined using the 'extern' keyword. Since the b0
+compiler is unable to check the types, or number of parameters to
+be passed, you don't enter this information in, you just declare
+the procedure as external.</p>
+<p>Now comes the fun bit. I've briefly explained how parameters are
+passed, and where they are located. b0 is somewhat unique in it's
+setup, so it's important to understand how other languages can do
+it, so you can successfully be able to use the resources already
+found in your system. (glibc comes to mind, and I intend to offer a
+glibc wrapper library for the b0 base library package, for those
+that run *nix).</p>
+<p>Typically, b0 has 5 main memory locations, your source code or
+running application, the global memory area, the bss section
+(another type of global memory area), the stack which holds either
+values you 'push' onto the stack or the return locations of other
+procedures. The fifth, is unique, the local heap. This block of
+memory is used to hold the local variables. Most other languages,
+use the stack for this purpose, and hence most parameters are
+pushed onto the stack when passing information between
+procedures.</p>
+<p>The biggest issue is that the method used is different for each
+language implementation, and can even be different between versions
+of the same compiler! What I'll describe are 2 methods that you'll
+generally see...</p>
+<p>The first method is the general case used by most C
+implementations, and most HLL implementations that you'll find. It
+uses the stack exclusively to pass parameters between procedures.
+Parameters are pushed in reverse order, so the right most parameter
+is pushed first, and so on.</p>
+<p>To call a procedure that uses this type of method, you need to
+save the current r6 value (eg 'push r6'), make r6 equal to r7, and
+then you can push the parameters onto the stack. The finally call
+your desired procedure. On exit, simply use 'pop r6' to restore the
+b0 local heap pointer.</p>
+<p>eg:</p>
+<pre>
+  push r6;
+  r6 = r7;
+  r4 = &amp;C_Proc();
+  push r0, r1, r2;  // Push the parameters onto the stack...
+  call r4;
+  pop r6;
+</pre>
+<p>Pascal for example, using the same technique, but parameters are
+pushed onto the stack from left to right. (You know, the logical
+thing to do).</p>
+<p>The next method uses a combination of registers and the stack to
+pass information. (This method is the one used by gcc 3.4.3 on my
+Linux (x64_64) installation - this is inline with the v0.96 64bit
+ABI specification for AMD64 systems. Windows still uses the 32bit
+ABI as defined, except values are automatically extended from
+32bits to 64bits, with all values being passed via the stack).</p>
+<p>6 Registers are used (r4, r5, r3, r2, r8, r9), then the stack is
+used. r0 MUST be set to 0 (zero). Don't know why r0 has to be zero,
+but have found that many of the glibc functions will segfault is r0
+is not 0?</p>
+<p>Then a stack frame must be set, and values copied to it.
+Parameters are again read right to left, but are padded to the left
+to ensure that the registers are used first! I guess, it could be
+consider left to right then... But if you ever read through some
+disassembly of gcc code, you'll find that it's still done right to
+left, starting with stack, and finishing with the registers. One
+thing to note, I've found that gcc doesn't like using the stack
+that much... So be careful when the stack pointer (r7).</p>
+<p>The following code sample should give you an idea of how to call
+printf();</p>
+<p>eg:</p>
+<pre>
+  push r6;
+  r6 = r7;
+  r7 = r7 - 20h; //
+                 // The above 3 lines are equivalent to ENTER 20, 0
+  r4 = parameter1;  // Pointer to your format string
+  r5 = parameter2;  // The first variable
+  r3 = parameter3;
+  r2 = parameter4;
+  r8 = parameter5;
+  r9 = parameter6;
+  [r7+00h] = parameter7;
+  [r7+08h] = parameter8;
+  [r7+10h] = parameter9;
+  [r7+18h] = parameter10;
+  r0 = 0;
+  call printf();;
+  result = r0;
+  r7 = r6; pop r6;   // LEAVE
+</pre>
+<p>or:</p>
+<pre>
+  push r6; r6 = r7;  // ENTER 0,0
+  r4 = parameter1;
+  r5 = parameter2;
+  r0 = 0;
+  call printf();
+  result = r0;
+  r7 = r6; pop r6;   // LEAVE
+</pre>
+<p>Just note, I've gone left to right with the parameters, but gcc
+will start with the right most parameter (eg parameter10 in the
+first example). The same registers and memory locations are set,
+but just be aware that the order is reversed when trying to read a
+gcc disassembly dump compared to a b0 listing. Also gcc will setup
+up the stack frame at the beginning of the function and use 'LEAVE'
+in place of r7 = r6; pop r6; that I tend to use, right at the end
+of the procedure. So the stack frame is only setup once during the
+start of the procedure. If you want to use 'LEAVE', can you use the
+<code>asm{}</code> keyword to insert the instruction into the code
+stream.</p>
+<p>When linking to HLL's (in particular glibc), there are also 2
+variables that are passed to <code>main();</code>. These are
+<code>argc</code> or the number of CLI arguments passed to the
+program (including the name of the application as the first
+argument), and <code>argv</code> which is a pointer to a table of
+pointers to the actual string (null terminated) arguments passed.
+Since gcc (and glibc) treat the <code>main()</code> as any other
+procedure the same calling convention is used, and you'll find that
+these 2 variables can be found in <code>r4</code> and
+<code>r5</code> respectively. Most typical Linux applications will
+start as follows:</p>
+<pre>
+proc main(argc, argv){
+  r6 = memInit();      // Setup local variable buffer!
+  argc = r4;           // On application initialisation argc = edi
+  argv = r5;           // and argv = rsi
+  ....
+  exit(0);
+};
+</pre>
+<p>From that point onwards, you can access <code>argc</code> and
+<code>argv</code> as you normally would any other variable! Just
+note, in reality <code>argc</code> and <code>argv</code> can also
+be global variables as well, they don't have to be local variables,
+as shown here. However I will warn you, since <code>argc</code> and
+<code>argv</code> here are defined as local variables, when calling
+other HLL external functions, make sure you store the variables in
+registers *before* modifying <code>r6</code>! (Remember
+<code>r6</code> points to your local variables, modify it and you
+lose your reference).</p>
+<p>Why use <code>push r6; r6 = r7;</code> instead of <code>enter
+0,0</code>. Well simply put, the <code>enter</code> instruction has
+a cycle count of 14+ cycles (AMD64 Hammer Core), where the push/mov
+method is around 3 cycles. <code>leave</code> runs at about 3
+cycles, so for smaller code it's easy to justify using the
+<code>leave</code> instruction over the mov/pop combination, which
+is also 3 cycles. Oh, if I start quoting cycle counts, these are
+for the AMD64 based Hammer cores (eg Clawhammer and Sledgehammer).
+Cycle counts or latencies do vary between each core revision and
+each new core model. (I would give you the Intel figures for
+<code>enter</code> and <code>leave</code>, but I can't find them
+for the EM64T enable CPUs).</p>
+<p>Just a quick mention, I tend to load a pointer to the function
+into a register and then use an indirect call to the function. I
+plan on extending the b0 syntax to allow you to define a direct
+pointer to a procedure, rather than having to load a register
+first. But that's how it is for now. (Actually v0.0.16 has had this
+feature added, so just use <code>call proc();</code> to call extern
+defined procedures, as per the examples above).</p>
+<p>So far we have gone over declaring variables, what the registers
+are, how procedures (both internal and external) are defined, so
+what's left. Well just basic math operations, and possible an quick
+word on floating point math, since we have only dealt with integer
+math. Oh, I may also go over pointers as well, since quite a few
+people seem to have problems with these. (Sound knowledge of
+pointers and there usage is critical to b0 and assembler
+programming in general).</p>
+<p>Basic math operations are limited to addition, subtraction,
+multiplication, division (including modulus), and well that's about
+it. Bitwise operators are also available, with shift and rotate
+functions being available. If you've read through some of the
+examples, and the unicode library, you'll notice that most math
+functions are operated on by themselves. Compound math functions
+simply do not exist. Additionally, multiplication and division (and
+modulus) are limited to certain registers, this is mainly due to
+how Intel designed the original 8086 processor, something that
+we've been stuck with since the late 70's. &lt;sarcasm&gt;Shame on
+Intel for not seeing the future, where the x86 CPU will still be
+around after 25+ years&lt;/sarcasm&gt;.</p>
+<p>Addition and subtraction can occur using any of the 15 available
+registers, with a target, source and operator all being different.
+If the target and source registers are different, the source is
+copied into the target, and then the operation is performed, since
+the x86 opcodes only allow a target and operator, (only 2 regs are
+used), unlike most RISC CPUs which have all 3. eg</p>
+<pre>
+  r3 = r9 + r10;
+</pre>
+<p>gets compiled to:</p>
+<pre>
+  mov r3, r9
+  add r3, r10
+</pre>
+<p>If the target and the source registers are the same, then the
+<code>mov</code> instruction is omitted as it's redundant. The same
+occurs with subtraction, and the similar with the bitwise operators
+(except with shifts/rotates, the operator reg must be r2). Besides
+the operator being a register, you can use an immediate
+integer.</p>
+<p>Multiplication, division and modulus MUST have source of r0. For
+all multiplcaion, division and modulus functions r3 and r0
+registers are overwritten, so even if you define a target register
+other than r0 or r3, those registers are still overwritten.
+Personally I tend to use r0 through to r3 as scratchpad or work
+registers, with r8 through to r15 as temporary storage registers
+becuase of this fact.</p>
+<p>Shift and rotate operations, require that the operator register
+be either r2 or an unsigned integer. r2 is required due to 1:1
+matching with x86 assembler. You see, if you want to shift more
+than 1 place you can either tell the CPU to use the exact amount,
+or even better to use the r2 register as the count. This allows for
+smaller code, if the shift/rotate amounts can vary within the one
+function.</p>
+<p>I actually found out today (12 Jan 2006), that there is another
+language also called b0! However it's totally unrelated to what I'm
+doing here... Well I might take the time to let you know how b0,
+got it's name? Well, quite simply it's project number b0, which
+followed on from project a0 (which was a 512byte demo)! All my
+projects get a number, and well, the next inline was b0. (The high
+nibble denotes 64 bit projects, and the low nibble denotes 32bit
+projects). So b0 is my 12th 64bit native project! Well since
+v0.0.17 also has a 32bit port, I guess it should be called ba!
+(project 0a being the next 32bit project I take on). I guess I had
+too much alcohol when I came up with that scheme! I do have some
+16bit projects, but I haven't touched those in years.</p>
+<p>I might just just quickly go over some optermisation technics, since I'm going over some of the operator functions. Since certain operations work based on certain registers, it can be advantagous to your code if you took advantage of those facts. So especially for multiplication and division, keep in mind what the source registers are, and what the target registers are.</p>
+<p>However to big one I want to discuss, has to do with with structures and arrays. We know that we can create arrays of structures, where the individual structure size is not a base 2 value. However if you pad to a base 2 friendly size, eg 64bytes per element, then when performing indexes into the structure, eg. <code>r0 = hash[r2].hash_value;</code>, rather than performing a <code>mul</code> operation, the compiler is smart enough to use a shift operator instead (eg <code>shl</code>, <code>shr</code>). Additionally if you are working with a index set by a register, and working with different elements, you are better off using a pointer to the base of the array element, and then using manual offsets into the array element for the individual structure elements. The reason for this is, that every time you want to access a structure element within an array, the compiler will recalculate the pointer to the element within the array. This is obvisously wasteful... I guess the following example will give you an idea of what I'm on about.</p>
+<pre>
+struc struc_entry {
+  m64 hash;
+  m64 type;
+  m64 size;
+  m64 offset;
+};
+struc_entry[STRUC_TABLE_SIZE] struc_table;
+
+proc dummy(){
+  r0 = array_entry_offset;
+  r1 = struc_table[r0].hash;
+  r2 = struc_table[r0].size;
+  r3 = struc_table[r0].offset;
+};
+</pre>
+<p>Would produce code something like:</p>
+<pre>
+  push r6
+  mov r6, _B0_struc_table
+  push r0
+  shl r0, 5
+  add r6, r0
+  pop r0
+  mov r1, qword [r6]
+  pop r6
+  push r6
+  mov r6, _B0_struc_table
+  push r0
+  shl r0, 5
+  add r6, r0
+  pop r0
+  add r6, 010h
+  mov r2, qword [r6]
+  pop r6
+  push r6
+  mov r6, _B0_struc_table
+  push r0
+  shl r0, 5
+  add r6, r0
+  pop r0
+  add r6, 018h
+  mov r3, qword [r6]
+  pop r6
+</pre>
+<p>However conversely, you use a pointer and offsets like:</p>
+<pre>
+struc struc_entry {
+  m64 hash;
+  m64 type;
+  m64 size;
+  m64 offset;
+};
+struc_entry[STRUC_TABLE_SIZE] struc_table;
+
+proc dummy(){
+  r1 = array_entry_offset;
+  r0 = &amp;struc_table[r1];
+  r1 = [r0+struc_entry.hash];
+  r2 = [r0+struc_entry.size];
+  r3 = [r0+struc_entry.offset];
+};
+</pre>
+<p>You would get the following code:</p>
+<pre>
+  movzx r1, word [_B0_array_entry_offset]
+  push r6
+  mov r6, _B0_struc_table
+  push r1
+  shl r1, 5
+  add r6, r1
+  pop r1
+  mov r0, r6
+  pop r6
+  mov r1, [r0+0]
+  mov r2, [r0+16]
+  mov r3, [r0+24]
+</pre>
+<p>Which is a lot shorter, and a lot quicker... So I hope you get the point?</p>
+</div>
+		<div class="noprint">
+			<hr />
+			<p class="align_right">
+				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1" height="31" width="88" /></a>
+			</p>
+		</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+﻿#COMPILER_OPTION PE;
+extern ExitProcess() as 'ExitProcess' in KERNEL32 as 'KERNEL32.DLL';
+
+m64 lck_var;
+
+proc main(){
+
+	lock(r0);
+	
+	lock([r1+r0+8]);
+	
+	iflock(r1){	
+		r0 = r1;
+	} else {
+		r2 = r1;
+	}
+	
+	iflock(r0){
+		r0 = r1;
+	} else {
+		r2 = r1;
+	}
+	
+	lock([r0]);
+	
+	iflock([r1+r0]){
+		r0 = 1;
+	}
+	
+	unlock(r0);
+};

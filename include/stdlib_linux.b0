@@ -1,0 +1,444 @@
+// standard routines for Linux.
+
+// Copyright 2005 Darran Kartaschew
+// Released under a BSD Licence.
+
+// Contains the following routine:
+
+// memInit();
+// malloc();  	
+// echo();
+
+// The following are the standard syscalls that have wrappers.
+
+// Standard defines;
+#ifndef LOCAL_HEAP;
+#define LOCAL_HEAP = 4000000h; // Allocate 64MB
+#endif;
+
+#define SYS_EXIT 	= 01;
+#define SYS_FORK 	= 02;
+#define SYS_READ 	= 03;
+#define SYS_WRITE 	= 04;
+#define SYS_OPEN	= 05;
+#define SYS_CLOSE	= 06;
+#define SYS_WAITPID = 07;
+#define SYS_CREAT	= 08;
+#define SYS_LINK	= 09;
+#define SYS_UNLINK	= 10;
+#define SYS_EXECVE	= 11;
+#define SYS_CHDIR	= 12;
+#define SYS_TIME	= 13;
+#define SYS_MKNOD	= 14;
+#define SYS_CHMOD	= 15;
+#define SYS_LCHOWN	= 16;
+//#define SYS_STAT	= 18;
+#define SYS_LSEEK	= 19;
+#define SYS_GETPID	= 20;
+#define SYS_MOUNT	= 21;
+#define SYS_OLDMOUNT = 22;
+#define SYS_SETUID	= 23;
+#define SYS_GETUID 	= 24;
+#define SYS_STIME	= 25;
+#define SYS_PTRACE	= 26;
+#define SYS_ALARM	= 27;
+//#define SYS_FSTAT	= 28;
+#define SYS_PAUSE	= 29;
+#define SYS_UTIME	= 30;
+#define SYS_ACCESS	= 33;
+#define SYS_NICE	= 34;
+#define SYS_SYNC	= 36;
+#define SYS_KILL	= 37;
+#define SYS_RENAME	= 38;
+#define SYS_MKDIR	= 39;
+#define SYS_RMDIR	= 40;
+#define SYS_DUP		= 41;
+#define SYS_PIPE	= 42;
+#define SYS_TIMES	= 43;
+#define SYS_BRK		= 45;
+#define SYS_SETGID	= 46;
+#define SYS_GETGID	= 47;
+#define SYS_SIGNAL	= 48;
+#define SYS_GETEUID	= 49;
+#define SYS_GETEGID	= 50;
+#define SYS_ACCT	= 51;
+#define SYS_UMOUNT	= 52;
+#define SYS_IOCTL	= 53;
+#define SYS_FCNTL	= 55;
+#define SYS_SETPGID	= 57;
+#define SYS_OLDUNAME = 58;
+#define SYS_UMASK	= 60;
+#define SYS_CHROOT	= 61;
+#define SYS_USTAT	= 62;
+#define SYS_DUP2	= 63;
+#define SYS_GETPPID	= 64;
+#define SYS_GETPGRP	= 65;
+#define SYS_SETSID	= 66;
+#define SYS_SIGACTION = 67;
+#define SYS_SGETMASK = 68;
+#define SYS_SSETMASK = 69;
+#define SYS_SETREUID = 70;
+#define SYS_SETREGID = 71;
+#define SYS_SIGSUSPEND = 72;
+#define SYS_SIGPENDING = 73;
+#define SYS_SETHOSTNAME = 74;
+#define SYS_SETRLIMIT = 75;
+#define SYS_GETRLIMIT = 76;
+#define SYS_GETRUSAGE = 77;
+#define SYS_GETTIMEOFDAY = 78;
+#define SYS_SETTIMEOFDAY = 79;
+#define SYS_GETGROUPS = 80;
+#define SYS_SETGROUPS = 81;
+#define SYS_OLD_SELECT = 82;
+#define SYS_SYMLINK = 83;
+//#define SYS_LSTAT 	= 84;
+#define SYS_READLINK = 85;
+#define SYS_USELIB	= 86;
+#define SYS_SWAPON	= 87;
+#define SYS_REBOOT	= 88;
+#define SYS_READDIR	= 89;
+#define SYS_MMAP	= 90;
+#define SYS_MUNMAP	= 91;
+#define SYS_TRUNCATE = 92;
+#define SYS_FTRUNCATE = 93;
+#define SYS_FCHMOD 	= 94;
+#define SYS_FCHOWN	= 95;
+#define SYS_GETPRIORITY = 96;
+#define SYS_SETPRIOTITY = 97;
+#define SYS_STATFS	= 98;
+#define SYS_FSTATFS	= 100;
+#define SYS_IOPERM	= 101;
+#define SYS_SOCKETCALL = 102;
+#define SYS_SYSLOG	= 103;
+#define SYS_SETTIMER = 104;
+#define SYS_GETTIMER = 105;
+#define SYS_STAT	= 106;
+#define SYS_LSTAT	= 107;
+#define SYS_FSTAT	= 108;
+//#define SYS_UNAME	= 109;
+#define SYS_IOPL	= 110;
+#define SYS_VHANGUP	= 111;
+#define SYS_IDLE	= 112;
+#define SYS_VM86_OLD = 113;
+#define SYS_WAIT4	= 114;
+#define SYS_SWAPOFF	= 115;
+#define SYS_SYSINFO	= 116;
+#define SYS_IPC		= 117;
+#define SYS_FSYNC	= 118;
+#define SYS_SIGRETURN = 119;
+#define SYS_CLONE	= 120;
+#define SYS_SETDOMAINNAME = 121;
+#define SYS_UNAME	= 122;
+#define SYS_MODIFY_LDT = 123;
+#define SYS_ADJTIMEX = 124;
+#define SYS_MPROTECT = 125;
+#define SYS_SIGPROCMASK = 126;
+#define SYS_CREATE_MODULE = 127;
+#define SYS_INIT_MODULE = 128;
+#define SYS_DELETE_MODULE = 129;
+#define SYS_GET_KERNEL_SYMS = 130;
+#define SYS_QUOTACTL = 131;
+#define SYS_GTEPGID	= 132;
+#define SYS_FCHDIR	= 133;
+#define SYS_BDFLUSH = 134;
+#define SYS_SYSFS	= 135;
+#define SYS_PERSONALITY = 136;
+#define SYS_SETFSUID = 138;
+#define SYS_SETFSGID = 139;
+#define SYS_LLSEEK	= 140;
+#define SYS_GETDENTS = 141;
+#define SYS_SELECT	= 142;
+#define SYS_FLOCK	= 143;
+#define SYS_MSYNC	= 144;
+#define SYS_READV	= 145;
+#define SYS_WRITEV	= 146;
+#define SYS_GETSID	= 147;
+#define SYS_FDATASYNC = 148;
+#define SYS_SYSCTRL = 149;
+#define SYS_MLOCK	= 150;
+#define SYS_MUNLOCK	= 151;
+#define SYS_MLOCKALL = 152;
+#define SYS_MUNLOCKALL = 153;
+#define SYS_SCHED_SETPARAM = 154;
+#define SYS_SCHED_GETPARAM = 155;
+#define SYS_SCHED_SETSCHEDULAR = 156;
+#define SYS_SCHED_GETSCHEDULAR = 157;
+#define SYS_SCHED_YEILD = 158;
+#define SYS_SCHED_GET_PRIORITY_MAX = 159;
+#define SYS_SCHED_GET_PRIORITY_MIN = 160;
+#define SYS_SCHED_GET_RR_INTERVAL = 161;
+#define SYS_NANOSLEEP = 162;
+#define SYS_MREMAP	= 163;
+#define SYS_SETRESUID = 164;
+#define SYS_GETRESUID = 165;
+#define SYS_VM86 	= 166;
+#define SYS_QUERY_MODULE = 167;
+#define SYS_POLL 	= 168;
+#define SYS_NFSSERVCTRL = 169;
+#define SYS_SETRESGID = 170;
+#define SYS_GETRESGID = 171;
+#define SYS_PRCTL 	= 172;
+#define SYS_RT_SIGRETURN = 173;
+#define SYS_RT_SIGACTION = 174;
+#define SYS_RT_SIGPROCMASK = 175;
+#define SYS_RT_SIGPENDING = 176;
+#define SYS_RT_SIGTIMEDWAIT = 177;
+#define SYS_RT_SIGQUEUEINFO = 178;
+#define SYS_RT_SIGSUSPEND = 179;
+#define SYS_PREAD 	= 180;
+#define SYS_PWRITE	= 181;
+#define SYS_CHOWN	= 182;
+#define SYS_GETCWD	= 183;
+#define SYS_CAPGET	= 184;
+#define SYS_CAPSET	= 185;
+#define SYS_SIGALTSTACK = 186;
+#define SYS_SENDFILE = 187;
+#define SYS_VFORK	= 190;
+
+//*****************************
+//
+// Linux_Access()
+//
+// This is a wrapper for the sys_access syscall
+//
+//*****************************
+proc Linux_Access(filename, mode){
+	push r1, r2, r3, r4, r5;
+	r1 = filename;
+	r2 = mode;
+	r0 = SYS_ACCESS;			// sys_access
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Acct()
+//
+// This is a wrapper for the sys_acct syscall
+//
+//*****************************
+proc Linux_Acct(filename){
+	push r1, r2, r3, r4, r5;
+	r1 = filename;
+	r0 = SYS_ACCT;			// sys_acct
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Adjtimex()
+//
+// This is a wrapper for the sys_adjtimex syscall
+//
+//*****************************
+proc Linux_Adjtimex(buffer_ptr){
+	push r1, r2, r3, r4, r5;
+	r1 = buffer_ptr;
+	r0 = SYS_ADJTIMEX;			// sys_adjtimex
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Alarm()
+//
+// This is a wrapper for the sys_alarm syscall
+//
+//*****************************
+proc Linux_Alarm(time){
+	push r1, r2, r3, r4, r5;
+	r1 = time;
+	r0 = SYS_ALARM;			// sys_alarm
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Bdflush()
+//
+// This is a wrapper for the sys_bdflush syscall
+//
+//*****************************
+proc Linux_Bdflush(func, address){
+	push r1, r2, r3, r4, r5;
+	r1 = func;
+	r2 = address;
+	r0 = SYS_BDFLUSH;			
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Brk()
+//
+// This is a wrapper for the sys_brk syscall
+//
+//*****************************
+proc Linux_Brk(end_data_seg){
+	push r1, r2, r3, r4, r5;
+	r1 = end_data_seg;
+	r0 = SYS_BRK;			
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Chdir()
+//
+// This is a wrapper for the sys_chdir syscall
+//
+//*****************************
+proc Linux_Chdir(filename){
+	push r1, r2, r3, r4, r5;
+	r1 = filename;
+	r0 = SYS_CHDIR;
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_FChdir()
+//
+// This is a wrapper for the sys_fchdir syscall
+//
+//*****************************
+proc Linux_FChdir(handle){
+	push r1, r2, r3, r4, r5;
+	r1 = handle;
+	r0 = SYS_CHDIR;
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_Chmod()
+//
+// This is a wrapper for the sys_chmod syscall
+//
+//*****************************
+proc Linux_Chmod(filename){
+	push r1, r2, r3, r4, r5;
+	r1 = filename;
+	r0 = SYS_CHMOD;
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// Linux_FChmod()
+//
+// This is a wrapper for the sys_fchmod syscall
+//
+//*****************************
+proc Linux_FChmod(handle){
+	push r1, r2, r3, r4, r5;
+	r1 = handle;
+	r0 = SYS_FCHMOD;
+	syscall;
+	pop r5, r4, r3, r2, r1;
+	return(r0);
+}
+
+//*****************************
+//
+// memInit()
+//
+// This is a wrapper for the sys_brk syscall
+// Returns pointer to memory.
+//
+//*****************************
+proc memInit(){
+	push r4, r5;
+	r2 = LOCAL_HEAP;	// Let's get our local heap size
+	r1 = 0000h;			// Get top of memory
+	r0 = 045;			// sys_brk
+	syscall;
+	r15 = r0;
+	r1 = r0 + r2; 		// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;			// set new top of bss
+	pop r5, r4;
+	return(r15);
+}
+
+//*****************************
+//
+// malloc()
+//
+// This is a wrapper for the sys_brk syscall
+// Returns pointer to memory.
+//
+//*****************************
+proc malloc(mem_size){
+	r2 = mem_size;	// Let's get our size
+	r1 = 0000h;		// Get top of memory
+	r0 = 045;		// sys_brk
+	syscall;
+	r1 = r0 + r2; 	// allocate memory (move top of memory).
+	r0 = 045;
+	syscall;		// set new top of bss
+	return(r0);
+}
+
+//*****************************
+//
+// echo()
+//
+// takes a UTF16 encoded string and outputs to stdout
+//
+//*****************************
+proc echo(ptr_string){
+	m8[256] utf8_string;		// UTF8 String for output
+	m64 utf8_length;			// UTF8 String length
+	m8[16] string_size;			// UTF8 String size
+
+	push r1, r2, r3;
+	utf8_string[0] = 0ffh;		// Buffer length
+	utf8_string[1] = 0h;		// Used length
+	r0 = ptr_string;			// Set r0 = pointer to our string to print
+	r1 = &utf8_string;			// Set r1 = location of UTF8 form
+	r3 = u16_2_u8_str(r0, r1);	// Convert and store size in r3;
+	//r3 = r3 - 6;
+	utf8_length = r3;			// Store our string size.
+	r0 = 4;						// sys_write
+	r1 = 1;						// file handle = stdout
+	r2 = &utf8_string;			// pointer to string to print
+	r2 = r2 + 2;				// Adjust our pointer...
+	syscall;
+
+	pop r3, r2, r1;
+}
+
+proc echo_utf8(ptr_string){
+	push r1, r2, r3;
+	r0 = ptr_string;
+	r3w = [r0+2];
+	r3 = r3 - 2;
+	r3 = r3 << 1;
+	r2 = r0 + 4;
+	r0 = 4;
+	r1 = 1;
+	syscall;
+	pop r3, r2, r1;
+};
+
+
+

@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" title="Modern" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" media="print" title="Modern" />
+		<script type="text/javascript" src="css/ui.js"></script>
+		<title>B0 Standard Library</title>
+		</head>
+	<body>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="#styles" title="Increase font size" onclick="changeFontSize(1); return false;"><img src="css/fontsizelarger.gif" alt="Increase font size" /></a>
+				<a href="#styles" title="Decrease font size" onclick="changeFontSize(-1); return false;"><img src="css/fontsizesmaller.gif" alt="Decrease font size" /></a>
+				<a href="#styles" title="Toggle font serif" onclick="toggleSerif(); return false;"><img src="css/fontseriftoggle.gif" alt="Toggle font serif" /></a>
+				<a href="#styles" title="Revert styles to default" onclick="revertStyles(); return false;"><img src="css/reset.gif" alt="Revert styles" /></a>
+			</p>
+			<hr />
+			<p class="align_center">
+			<a href="b0.html#About"><img src="css/about.png" alt="About"/></a>&nbsp;
+			<a href="b0.html#Requirements"><img src="css/requirements.png" alt="Requirements"/></a>&nbsp;
+			<a href="b0.html#Documents"><img src="css/documents.png" alt="Documents"/></a>&nbsp;
+			<a href="b0-screenshots.html"><img src="css/scrnshots.png" alt="Screenshots"/></a>&nbsp;
+			<a href="forum/index.php"><img src="css/forum.png" alt="Forum"/></a>&nbsp;
+			<a href="b0.html#Downloads"><img src="css/downloads.png" alt="Downloads"/></a>
+			</p>
+			<hr />
+		</div>
+
+<div id="ContentArea">
+<h1><img alt="b0 Logo" src="css/b0.png" height="32" /> B0</h1>
+<p>Copyright &copy; 2000-2008, Darran Kartaschew</p>
+<h2>Standard Library</h2>
+<h3>Function Index - Alphabetical</h3>
+<h4>A..D</h4>
+<ul>
+<li><a href="#atof">atof</a></li>
+<li><a href="#atoi">atoi</a></li>
+</ul>
+<h4>E..H</h4>
+<ul>
+<li><a href="#ftoa">ftoa</a></li>
+<li><a href="#hash">hash</a></li>
+<li><a href="#htoi">htoi</a></li>
+</ul>
+<h4>I..L</h4>
+	<ul>
+		<li>
+			<a href="#itoa">itoa</a>
+		</li>
+		<li>
+			<a href="#itoh">itoh</a>
+		</li>
+	</ul>
+<h4>M..P</h4>
+<ul>
+<li><a href="#memcmp">memcmp</a></li>
+<li><a href="#memcpy">memcpy</a></li>
+<li><a href="#memInit">memInit</a></li>
+</ul>
+<h4>Q..T</h4>
+<h4>U..Z</h4>
+<ul>
+<li><a href="#u8_2_u16_char">u8_2_u16_char</a></li>
+<li><a href="#u8_2_u16_str">u8_2_u16_str</a></li>
+<li><a href="#u8_2_u32_char">u8_2_u32_char</a></li>
+<li><a href="#u8_2_u32_str">u8_2_u32_str</a></li>
+<li><a href="#u16_2_u8_char">u16_2_u8_char</a></li>
+<li><a href="#u16_2_u8_str">u16_2_u8_str</a></li>
+<li><a href="#u16_2_u32_char">u16_2_u32_char</a></li>
+<li><a href="#u16_2_u32_str">u16_2_u32_str</a></li>
+<li><a href="#u32_2_u8_char">u32_2_u8_char</a></li>
+<li><a href="#u32_2_u8_str">u32_2_u8_str</a></li>
+<li><a href="#u32_2_u16_char">u32_2_u16_char</a></li>
+<li><a href="#u32_2_u16_str">u32_2_u16_str</a></li>
+</ul>
+<h3>Function Index - By Include File</h3>
+<h4>stdlib.b0</h4>
+<ul>
+<li><a href="#atof">atof</a></li>
+<li><a href="#atoi">atoi</a></li>
+<li><a href="#ftoa">ftoa</a></li>
+<li><a href="#hash">hash</a></li>
+<li><a href="#htoi">htoi</a></li>
+<li><a href="#itoa">itoa</a></li>
+<li><a href="#itoh">itoh</a></li>
+<li><a href="#memcmp">memcmp</a></li>
+<li><a href="#memcpy">memcpy</a></li>
+</ul>
+<h4>stdlib_linux.b0</h4>
+<ul>
+<li><a href="#memInit">memInit</a></li>
+</ul>
+<h4>stdlib_unicode.b0</h4>
+<ul>
+<li><a href="#u8_2_u16_char">u8_2_u16_char</a></li>
+<li><a href="#u8_2_u16_str">u8_2_u16_str</a></li>
+<li><a href="#u8_2_u32_char">u8_2_u32_char</a></li>
+<li><a href="#u8_2_u32_str">u8_2_u32_str</a></li>
+<li><a href="#u16_2_u8_char">u16_2_u8_char</a></li>
+<li><a href="#u16_2_u8_str">u16_2_u8_str</a></li>
+<li><a href="#u16_2_u32_char">u16_2_u32_char</a></li>
+<li><a href="#u16_2_u32_str">u16_2_u32_str</a></li>
+<li><a href="#u32_2_u8_char">u32_2_u8_char</a></li>
+<li><a href="#u32_2_u8_str">u32_2_u8_str</a></li>
+<li><a href="#u32_2_u16_char">u32_2_u16_char</a></li>
+<li><a href="#u32_2_u16_str">u32_2_u16_str</a></li>
+</ul>
+<h2>Functions</h2>
+<h3><a id="atof">atof</a></h3>
+<p>takes a UTF16 encoded string (integer) and returns a floating
+point value in <code>fp0</code></p>
+<p><strong>atof(</strong><em>source_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>atof</strong> returns a signed floating point value in
+fp0.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    r0 = &amp;'10.10';
+    atof(r0);     // fp0 now contains the value 10.10;
+</pre>
+<hr />
+<h3><a id="atoi">atoi</a></h3>
+<p>takes a UTF16 encoded string (integer) and returns an integer in
+r0</p>
+<p><strong>atoi(</strong><em>source_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>atoi</strong> returns an unsigned integer in r0. Returns
+zero on error.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    r0 = &amp;'1234';
+    r1 = atoi(r0);     // r1 now contains the value 1234;
+</pre>
+<hr />
+<h3><a id="ftoa">ftoa</a></h3>
+<p>takes a floating point value located in <code>fp0</code> and
+inserts it into the string provided.</p>
+<p><strong>ftoa(</strong><em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>itoa</strong> returns zero.</p>
+<p><strong>Parameters</strong></p>
+<p><code>fp0</code> - signed floating point value (f80).</p>
+<p><em>dest_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    m16[1024] my_string;
+    my_string[0] = 1024;    // Set buffer length
+    my_string[1] = 0;       // Set allocated buffer size
+    r0 = &amp;my__string;
+    fp0 = -10.10;
+    ftoa(r0);               // my_string now contains the string '-10.10';
+</pre>
+<hr />
+<h3><a id="hash">hash</a></h3>
+<p>takes a UTF16 encoded string and returns a 64bit hash.</p>
+<p><strong>hash(</strong><em>source_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>hash</strong> returns an unsigned 64bit hash of the
+string.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>This hash function is based on <em>ElfHash</em> with
+modifications.</p>
+<p><strong>Example</strong></p>
+<pre>
+    r0 = &amp;'The quick brown fox jumped over the lazy dog';
+    r1 = hash(r0);     // r1 now contains the hash of the string;
+</pre>
+<hr />
+<h3><a id="htoi">htoi</a></h3>
+<p>takes a UTF16 encoded string (hexadecimal) and returns an
+integer in r0</p>
+<p><strong>htoi(</strong><em>source_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>htoi</strong> returns an unsigned integer in r0. Returns
+zero on error.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    r0 = &amp;'1234a';
+    r1 = htoi(r0);     // r1 now contains the value 1234ah;
+</pre>
+<hr />
+<h3><a id="itoa">itoa</a></h3>
+<p>takes an integer and inserts it into the string provided.</p>
+<p><strong>itoa(</strong><em>value</em>,
+<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>itoa</strong> returns zero.</p>
+<p><strong>Parameters</strong></p>
+<p><em>value</em> - unsigned value (type m64).</p>
+<p><em>dest_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    m16[1024] my_string;
+    my_string[0] = 1024;    // Set buffer length
+    my_string[1] = 0;       // Set allocated buffer size
+    r0 = &amp;my__string;
+    itoa(10, r0);           // my_string now contains the string '10';
+</pre>
+<hr />
+<h3><a id="itoh">itoh</a></h3>
+<p>takes an integer and inserts it into the string provided.</p>
+<p><strong>itoh(</strong><em>value</em>,
+<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>itoh</strong> returns zero.</p>
+<p><strong>Parameters</strong></p>
+<p><em>value</em> - unsigned value (type m64).</p>
+<p><em>dest_ptr</em> - pointer to a UTF16 encoded string. The
+string must confirm to the standard string type.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<p><strong>Example</strong></p>
+<pre>
+    m16[1024] my_string;
+    my_string[0] = 1024;    // Set buffer length
+    my_string[1] = 0;       // Set allocated buffer size
+    r0 = &amp;my__string;
+    itoh(10, r0);           // my_string now contains the string 'a';
+</pre>
+<hr />
+<h3><a id="memcmp">memcmp</a></h3>
+<p>compares a memory block from 1 location to another.</p>
+<p><strong>memcmp(</strong><em>source_ptr</em>,
+<em>dest_ptr</em>,<em>size</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>memcpy</strong> returns zero if memory blocks are equal,
+else returns count left. (eg <em>size</em> - return value =
+location of difference).</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to memory source.</p>
+<p><em>dest_ptr</em> - pointer to a memory destinition.</p>
+<p><em>size</em> - number of bytes to compare.</p>
+<p><strong>Remarks</strong></p>
+<p>This performs a single byte-by-byte comparison. For larger
+blocks, avoid this function.</p>
+<p><strong>Example</strong></p>
+<pre>
+    r0 = &amp;'The quick brown fox jumped over the lazy dog';
+    r1 = &amp;'The quick brown fox jumped over the lazy dog';
+    memcmp(r0, r1, 32);    // compare strings;
+</pre>
+<hr />
+<h3><a id="memcpy">memcpy</a></h3>
+<p>copys a memory block from 1 location to another.</p>
+<p><strong>memcpy(</strong><em>source_ptr</em>,
+<em>dest_ptr</em>,<em>size</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>memcpy</strong> returns zero if complete.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - pointer to memory source to be copied.</p>
+<p><em>dest_ptr</em> - pointer to a memory destinition.</p>
+<p><em>size</em> - number of bytes to copy.</p>
+<p><strong>Remarks</strong></p>
+<p>This performs a single byte-by-byte copy. For larger blocks,
+avoid this function.</p>
+<p><strong>Example</strong></p>
+<pre>
+    m16[1024] buffer1;
+    r0 = &amp;'The quick brown fox jumped over the lazy dog';
+    r1 = &amp;buffer1;
+    memcpy(r0, r1, 2048);    // copy the string to buffer1;
+</pre>
+<hr />
+<h3><a id="memInit">memInit</a></h3>
+<p>Setups up a local heap for use by procedures.</p>
+<p><strong>memInit()</strong></p>
+<p><strong>Library</strong> - stdlib_linux.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>memcpy</strong> sets <code>r6</code> to pointer of local
+heap.</p>
+<p><strong>Parameters</strong></p>
+<p>Nil</p>
+<p><strong>Remarks</strong></p>
+<p>This function allocates enough space for a local variable heap.
+It also sets <code>r6</code> accordingly. If a define
+<code>LOCAL_HEAP</code> is not set, then a heap of 64MB is
+created.</p>
+<p><strong>Example</strong></p>
+<pre>
+    #define LOCAL_HEAP = 100000h;
+    memInit();          // Allocate a local heap of 1MB;
+</pre>
+<hr />
+<h3><a id="u8_2_u16_char">u8_2_u16_char</a></h3>
+<p>converts a UTF8 encoded character into a UTF16 encoded
+character.</p>
+<p>
+<strong>u8_2_u16_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u8_2_u16_char</strong> returns a UTF16 encoded
+character. bits 0-15: 1st word, bits 16-32: 2nd word (if surrogate
+pair).</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF8 encoded character. Each byte of m64 passed
+is part of the char. eg. bits 0-7 = 1st byte, bits 8-15 = 2nd byte,
+etc. Max 8 bytes passed.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u8_2_u16_str">u8_2_u16_str</a></h3>
+<p>converts a UTF8 encoded string into a UTF16 encoded string.</p>
+<p>
+<strong>u8_2_u16_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u8_2_u16_str</strong> returns number of words
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF8 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF16 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u8_2_u32_char">u8_2_u32_char</a></h3>
+<p>converts a UTF8 encoded character into a UTF32 encoded
+character.</p>
+<p>
+<strong>u8_2_u32_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u8_2_u32_char</strong> returns a UTF32 encoded
+character.</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF8 encoded character. Each byte of m64 passed
+is part of the char. eg. bits 0-7 = 1st byte, bits 8-15 = 2nd byte,
+etc. Max 8 bytes passed.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u8_2_u32_str">u8_2_u32_str</a></h3>
+<p>converts a UTF8 encoded string into a UTF32 encoded string.</p>
+<p>
+<strong>u8_2_u32_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u8_2_u32_str</strong> returns number of dwords
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF8 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF16 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u16_2_u8_char">u16_2_u8_char</a></h3>
+<p>converts a UTF16 encoded character into a UTF8 encoded
+character.</p>
+<p>
+<strong>u16_2_u8_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u16_2_u8_char</strong> returns a UTF8 encoded character.
+bits 0-7: 1st byte, bits 8-15: 2nd byte, etc.</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF16 encoded character. Each byte of m64 passed
+is part of the char. eg. bits 0-15 = 1st word, bits 15-31 = 2nd
+word, etc. Max 2 words passed.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u16_2_u8_str">u16_2_u8_str</a></h3>
+<p>converts a UTF16 encoded string into a UTF8 encoded string.</p>
+<p>
+<strong>u16_2_u8_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u16_2_u8_str</strong> returns number of bytes
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF16 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF8 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u16_2_u32_char">u16_2_u32_char</a></h3>
+<p>converts a UTF16 encoded character into a UTF32 encoded
+character.</p>
+<p>
+<strong>u16_2_u32_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u16_2_u32_char</strong> returns a UTF32 encoded
+character.</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF16 encoded character. Each byte of m64 passed
+is part of the char. eg. bits 0-15 = 1st word, bits 15-31 = 2nd
+word, etc. Max 2 words passed.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u16_2_u32_str">u16_2_u32_str</a></h3>
+<p>converts a UTF16 encoded string into a UTF32 encoded string.</p>
+<p>
+<strong>u16_2_u32_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u16_2_u32_str</strong> returns number of dwords
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF16 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF32 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u32_2_u8_char">u32_2_u8_char</a></h3>
+<p>converts a UTF32 encoded character into a UTF8 encoded
+character.</p>
+<p>
+<strong>u32_2_u8_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u32_2_u8_char</strong> returns a UTF8 encoded character.
+bits 0-7: 1st byte, bits 8-15: 2nd byte, etc.</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF32 encoded character.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u32_2_u8_str">u32_2_u8_str</a></h3>
+<p>converts a UTF32 encoded string into a UTF8 encoded string.</p>
+<p>
+<strong>u32_2_u8_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u32_2_u8_str</strong> returns number of bytes
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF32 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF8 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u32_2_u16_char">u32_2_u16_char</a></h3>
+<p>converts a UTF32 encoded character into a UTF16 encoded
+character.</p>
+<p>
+<strong>u32_2_u16_char(</strong><em>char</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u32_2_u16_char</strong> returns a UTF16 encoded
+character. bits 0-15: 1st word, bits 15-31: 2nd word.</p>
+<p><strong>Parameters</strong></p>
+<p><em>char</em> - UTF32 encoded character.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+<h3><a id="u32_2_u16_str">u32_2_u16_str</a></h3>
+<p>converts a UTF32 encoded string into a UTF16 encoded string.</p>
+<p>
+<strong>u32_2_u16_str(</strong><em>source_ptr</em>,<em>dest_ptr</em><strong>)</strong></p>
+<p><strong>Library</strong> - stdlib_unicode.b0</p>
+<p><strong>Return Value</strong></p>
+<p><strong>u32_2_u16_str</strong> returns number of words
+utilised.</p>
+<p><strong>Parameters</strong></p>
+<p><em>source_ptr</em> - UTF32 encoded string.</p>
+<p><em>dest_ptr</em> - pointer to UTF16 string.</p>
+<p><strong>Remarks</strong></p>
+<p>Nil.</p>
+<hr />
+</div>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1" height="31" width="88" /></a>
+			</p>
+		</div>
+	</body>
+</html>

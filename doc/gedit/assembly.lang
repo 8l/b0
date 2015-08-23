@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language _name="Assembler" version="1.0" _section="Sources" mimetypes="text/x-asm;text/x-assembler">
+	
+	<escape-char>\</escape-char>
+
+	<line-comment _name = "Line Comment" style= "Comment" end-at-line-end = "TRUE">
+		<start-regex>#|@|;</start-regex>
+	</line-comment>
+
+	<block-comment _name = "Block Comment" style = "Comment">
+		<start-regex>/\*</start-regex>
+        	<end-regex>\*/</end-regex>
+	</block-comment>
+
+	<pattern-item _name = "Operators" style = "Keyword">
+		<regex>[-.,:\+\*\/\(\)\{\}\[]|]</regex>
+	</pattern-item>
+
+	<pattern-item _name = "ImOperand" style = "Keyword">
+		<regex>\$[A-Za-z0-9_\-\+]*</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Label" style = "Preprocessor">
+		<regex>^[A-Za-z_][A-Za-z_0-9]*\:</regex>
+	</pattern-item>
+
+	<string _name = "String" style = "String" end-at-line-end = "TRUE">
+		<start-regex>&quot;</start-regex>
+		<end-regex>&quot;</end-regex>
+	</string>
+	
+	<keyword-list _name = "Keywords" style = "Keyword" case-sensitive="false">
+		<keyword>macro</keyword>
+		<keyword>if</keyword>
+		<keyword>end</keyword>
+		<keyword>repeat</keyword>
+		<keyword>else</keyword>
+		<keyword>eqtype</keyword>
+		<keyword>break</keyword>
+		<keyword>purge</keyword>
+		<keyword>common</keyword>
+		<keyword>forward</keyword>
+		<keyword>reverse</keyword>
+		<keyword>label</keyword>
+		<keyword>rept</keyword>
+		<keyword>match</keyword>
+		<keyword>org</keyword>
+		<keyword>use16</keyword>
+		<keyword>use32</keyword>
+		<keyword>use64</keyword>
+		<keyword>virtual</keyword>
+		<keyword>at</keyword>
+		<keyword>segment</keyword>
+		<keyword>include</keyword>
+		<keyword>equ</keyword>
+		<keyword>fix</keyword>
+		<keyword>define</keyword>
+		<keyword>struc</keyword>
+		<keyword>format</keyword>
+		<keyword>entry</keyword>
+		<keyword>stack</keyword>
+		<keyword>MZ</keyword>
+		<keyword>PE</keyword>
+		<keyword>PE64</keyword>
+		<keyword>COFF</keyword>
+		<keyword>MS</keyword>
+		<keyword>MS64</keyword>
+		<keyword>ELF</keyword>
+		<keyword>ELF64</keyword>
+		<keyword>console</keyword>
+		<keyword>native</keyword>
+		<keyword>GUI</keyword>
+		<keyword>heap</keyword>
+		<keyword>code</keyword>
+		<keyword>data</keyword>
+		<keyword>readable</keyword>
+		<keyword>writeable</keyword>
+		<keyword>executable</keyword>
+		<keyword>shareable</keyword>
+		<keyword>discardable</keyword>
+		<keyword>notpageable</keyword>
+		<keyword>resource</keyword>
+		<keyword>section</keyword>
+		<keyword>extern</keyword>
+		<keyword>public</keyword>
+	</keyword-list>	
+
+	<keyword-list _name = "Registers" style = "Register" case-sensitive="FALSE"
+		match-empty-string-at-beginning = "FALSE"
+		match-empty-string-at-end = "TRUE">
+		
+		<!-- intel 386 -->
+		
+		<keyword>eax</keyword>
+		<keyword>ebx</keyword>
+		<keyword>ecx</keyword>
+		<keyword>edx</keyword>		
+		<keyword>esi</keyword>
+		<keyword>edi</keyword>		
+		<keyword>esp</keyword>
+		<keyword>ebp</keyword>
+
+		<keyword>ax</keyword>
+		<keyword>bx</keyword>
+		<keyword>cx</keyword>
+		<keyword>dx</keyword>
+		<keyword>di</keyword>
+		<keyword>si</keyword>
+		<keyword>bp</keyword>
+		<keyword>sp</keyword>
+
+		<keyword>al</keyword>
+		<keyword>ah</keyword>
+		<keyword>bh</keyword>
+		<keyword>bl</keyword>
+		<keyword>ch</keyword>
+		<keyword>cl</keyword>
+		<keyword>dh</keyword>
+		<keyword>dl</keyword>
+		
+		<!-- AMD64 -->
+
+		<keyword>rax</keyword>
+		<keyword>rbx</keyword>
+		<keyword>rcx</keyword>
+		<keyword>rdx</keyword>
+		<keyword>rsi</keyword>
+		<keyword>rdi</keyword>
+		<keyword>rbp</keyword>
+		<keyword>rsp</keyword>
+		<keyword>sil</keyword>
+		<keyword>dil</keyword>
+			
+		<keyword>r0</keyword>
+	    <keyword>r1</keyword>
+	    <keyword>r2</keyword>
+	    <keyword>r3</keyword>
+	    <keyword>r4</keyword>
+	    <keyword>r5</keyword>
+	    <keyword>r6</keyword>
+	    <keyword>r7</keyword>
+	    <keyword>r8</keyword>
+	    <keyword>r9</keyword>
+	    <keyword>r10</keyword>
+	    <keyword>r11</keyword>
+	    <keyword>r12</keyword>
+	    <keyword>r13</keyword>
+	    <keyword>r14</keyword>
+	    <keyword>r15</keyword>
+	    <keyword>r0b</keyword>
+	    <keyword>r1b</keyword>
+	    <keyword>r2b</keyword>
+	    <keyword>r3b</keyword>
+	    <keyword>r4b</keyword>
+	    <keyword>r5b</keyword>
+	    <keyword>r6b</keyword>
+	    <keyword>r7b</keyword>
+	    <keyword>r8b</keyword>
+	    <keyword>r9b</keyword>
+	    <keyword>r10b</keyword>
+	    <keyword>r11b</keyword>
+	    <keyword>r12b</keyword>
+	    <keyword>r13b</keyword>
+	    <keyword>r14b</keyword>
+	    <keyword>r15b</keyword>
+	    <keyword>r0w</keyword>
+	    <keyword>r1w</keyword>
+	    <keyword>r2w</keyword>
+	    <keyword>r3w</keyword>
+	    <keyword>r4w</keyword>
+	    <keyword>r5w</keyword>
+	    <keyword>r6w</keyword>
+	    <keyword>r7w</keyword>
+	    <keyword>r8w</keyword>
+	    <keyword>r9w</keyword>
+	    <keyword>r10w</keyword>
+	    <keyword>r11w</keyword>
+	    <keyword>r12w</keyword>
+	    <keyword>r13w</keyword>
+	    <keyword>r14w</keyword>
+	    <keyword>r15w</keyword>
+	    <keyword>r0d</keyword>
+	    <keyword>r1d</keyword>
+	    <keyword>r2d</keyword>
+	    <keyword>r3d</keyword>
+	    <keyword>r4d</keyword>
+	    <keyword>r5d</keyword>
+	    <keyword>r6d</keyword>
+	    <keyword>r7d</keyword>
+	    <keyword>r8d</keyword>
+	    <keyword>r9d</keyword>
+	    <keyword>r10d</keyword>
+	    <keyword>r11d</keyword>
+	    <keyword>r12d</keyword>
+	    <keyword>r13d</keyword>
+	    <keyword>r14d</keyword>
+	    <keyword>r15d</keyword>
+	      
+	      <!-- Generic i386+ -->
+
+		<keyword>cs</keyword>
+		<keyword>ds</keyword>
+		<keyword>ss</keyword>
+		<keyword>es</keyword>
+		<keyword>fs</keyword>
+		<keyword>gs</keyword>
+		
+		<keyword>cr0</keyword>
+		<keyword>cr2</keyword>
+		<keyword>cr3</keyword>
+		
+		<keyword>db0</keyword>
+		<keyword>db1</keyword>
+		<keyword>db2</keyword>
+		<keyword>db3</keyword>
+		<keyword>db6</keyword>
+		<keyword>db7</keyword>
+		
+		<keyword>tr6</keyword>
+		<keyword>tr7</keyword>
+
+		<keyword>ip</keyword>
+		<keyword>eip</keyword>
+		<keyword>rip</keyword>
+		
+		<keyword>st</keyword>
+		<keyword>st(0)</keyword>
+		<keyword>st(1)</keyword>
+		<keyword>st(2)</keyword>
+		<keyword>st(3)</keyword>
+		<keyword>st(4)</keyword>
+		<keyword>st(5)</keyword>
+		<keyword>st(6)</keyword>
+		<keyword>st(7)</keyword>
+		<keyword>st0</keyword>
+		<keyword>st1</keyword>
+		<keyword>st2</keyword>
+		<keyword>st3</keyword>
+		<keyword>st4</keyword>
+		<keyword>st5</keyword>
+		<keyword>st6</keyword>
+		<keyword>st7</keyword>		
+		
+		<keyword>mm0</keyword>
+		<keyword>mm1</keyword>
+		<keyword>mm2</keyword>
+		<keyword>mm3</keyword>
+		<keyword>mm4</keyword>
+		<keyword>mm5</keyword>
+		<keyword>mm6</keyword>
+		<keyword>mm7</keyword>
+		
+		<keyword>xmm0</keyword>
+		<keyword>xmm1</keyword>
+		<keyword>xmm2</keyword>
+		<keyword>xmm3</keyword>
+		<keyword>xmm4</keyword>
+		<keyword>xmm5</keyword>
+		<keyword>xmm6</keyword>
+		<keyword>xmm7</keyword>
+		<keyword>xmm8</keyword>
+		<keyword>xmm9</keyword>
+		<keyword>xmm10</keyword>
+		<keyword>xmm11</keyword>
+		<keyword>xmm12</keyword>
+		<keyword>xmm13</keyword>
+		<keyword>xmm14</keyword>
+		<keyword>xmm15</keyword>
+	</keyword-list>
+	
+	<keyword-list _name = "Types" style = "Data Type" case-sensitive="false">
+	    <keyword>db</keyword>
+	    <keyword>dw</keyword>
+	    <keyword>dd</keyword>
+	    <keyword>dq</keyword>
+	    <keyword>dt</keyword>
+	    <keyword>du</keyword>
+	    <keyword>dp</keyword>
+	    <keyword>df</keyword>
+	    <keyword>rb</keyword>
+	    <keyword>rw</keyword>
+	    <keyword>rd</keyword>
+	    <keyword>rq</keyword>
+	    <keyword>rt</keyword>
+	    <keyword>rp</keyword>
+	    <keyword>rf</keyword>
+	    <keyword>file</keyword>
+	    <keyword>byte</keyword>
+	    <keyword>word</keyword>
+	    <keyword>dword</keyword>
+	    <keyword>qword</keyword>
+	    <keyword>tword</keyword>
+	    <keyword>pword</keyword>
+	    <keyword>near</keyword>
+	    <keyword>short</keyword>
+	    <keyword>far</keyword>
+	</keyword-list>
+
+	<pattern-item _name = "Character Constant" style = "String">
+		<regex>&apos;([^\]|\\(.?))</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Decimal" style = "Decimal">
+		<regex>\b([1-9][0-9]*|0)([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Floating Point Number" style = "Floating Point">
+		<regex>\b([0-9]+[Ee][-]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([Ee][-]?[0-9]+)?)[fFlL]?</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Hex Number" style = "Base-N Integer">
+		<regex>\b0[xX][0-9a-fA-F]+([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</regex>
+		<regex>\b[0-9a-fA-F]+[hH]?\b</regex>
+	</pattern-item>
+
+</language>

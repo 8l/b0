@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" title="Modern" />
+		<link rel="stylesheet" type="text/css" href="css/header.css" media="print" title="Modern" />
+		<script type="text/javascript" src="css/ui.js"></script>
+		<meta name="description" content="The B0 programming langauge website" />
+		<meta name="keywords" content="b0,programming,b0 programming language,assembler,amd64,x64-64,EM64T,fasm,flat assembler" />
+		<meta name="author" content="Darran Kartaschew" />
+		<meta name="copyright" content="&copy; 2000-2008, Darran Kartaschew" />
+		<title>B0</title>
+	</head>
+	<body>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="#styles" title="Increase font size" onclick="changeFontSize(1); return false;"><img src="css/fontsizelarger.gif" alt="Increase font size" /></a>
+				<a href="#styles" title="Decrease font size" onclick="changeFontSize(-1); return false;"><img src="css/fontsizesmaller.gif" alt="Decrease font size" /></a>
+				<a href="#styles" title="Toggle font serif" onclick="toggleSerif(); return false;"><img src="css/fontseriftoggle.gif" alt="Toggle font serif" /></a>
+				<a href="#styles" title="Revert styles to default" onclick="revertStyles(); return false;"><img src="css/reset.gif" alt="Revert styles" /></a>
+			</p>
+			<hr />
+			<p class="align_center">
+			<a href="b0.html#About"><img src="css/about.png" alt="About"/></a>&nbsp;
+			<a href="b0.html#Requirements"><img src="css/requirements.png" alt="Requirements"/></a>&nbsp;
+			<a href="b0.html#Documents"><img src="css/documents.png" alt="Documents"/></a>&nbsp;
+			<a href="b0-screenshots.html"><img src="css/scrnshots.png" alt="Screenshots"/></a>&nbsp;
+			<a href="forum/index.php"><img src="css/forum.png" alt="Forum"/></a>&nbsp;
+			<a href="b0.html#Downloads"><img src="css/downloads.png" alt="Downloads"/></a>
+			</p>
+			<hr />
+		</div>
+<div id="ContentArea">
+<h1><img alt="b0 Logo" src="css/b0.png" height="32" /> B0</h1>
+<p>Copyright &copy; 2000-2008, Darran Kartaschew</p>
+<h2 id="About">Introduction</h2>
+<p>The B0 language and compiler came about during an effort to
+create my own Operating System. The main problem faced, was the C
+was too high level, and coding in assembler was a pain (even though
+80% of my code is pure asm, and the other 20% is PHP for work).</p>
+<p>Being soley an assembler programmer for many years gave me a
+pure unrestricted environment to play in, rather than being locked
+down to a particular environment. Which always left a bad taste in
+my mouth, whenever I worked with many of the HLLs out there, (ever
+tried a bitwise rotate in C?). I wanted the freedom that assembler
+gave me, but have a HLL programming style.</p>
+<p>I looked Randall Hyde's <a href=
+"http://webster.cs.ucr.edu/">HLA</a>, and while the syntax is more
+HLL programmer friendly, it still didn't gel with me. Plus I was
+limited to a particular OS (Windows or Linux), becuase of the
+standard library it used. (Which by the way is a great library,
+just doesn't suit my needs as it stands).</p>
+<p>At first B0, may look like C, but once you get down and dirty,
+you quickly realise that it's not a bastardised C clone, but
+something else. The best way I would describe it, is a HLL designed
+to be machine dependent based a 64bit architecture.</p>
+<p>A quick word on licensing: The B0 language and this
+implementation are released under a BSD license.</p>
+<h2 id="Requirements">System Requirements</h2>
+<ul>
+<li>Either a IA-32 w/EM64T or AMD64 based processor, for 64bit
+Operation.</li>
+<li>Minimum 512MB of RAM (The compiler requires approximately 140MB
+when compiling applications).</li>
+<li>64bit OS. (Any with a C compiler, and somewhat basic libc
+support).<br /></li>
+<li><a href="http://flatassembler.net/">FASM v1.67.27+</a> (used as a
+backend assembler - Hi Tomasz).</li>
+<li>Text Editor supporting UTF-8 (Unicode Output).</li>
+</ul>
+<h2>Code Example</h2>
+<pre>
+//Program 'Hello World';
+lib 'stdlib.b0';
+proc main(){ 
+    r0 = &amp;'Hello World&trade;\n'; 
+    echo(r0); //echo() prints the string pointed to by r0 to stdout 
+    exit(r0);
+}; 
+</pre>
+<p>The always present 'Hello World&trade;' example.</p>
+<p>Unfortunately, this little example doesn't give away that
+much...</p>
+<p>As you can see, it looks a lot like C and quite a few other
+languages. But the make up of each statement is very simple, and in
+most cases match the assembler output nearly 1:1.</p>
+<p>Hopefully some of the other code snippets will highlight
+this.</p>
+<h2>What makes it different from other languages</h2>
+<p>Nothing really, except that it's very minimalist and you get to
+play with the CPU registers within the acutal code itself. (The
+code focuses around the registers).</p>
+<h3>Is it Assembler or a High Level Language, or both?</h3>
+<p>Well that depends on your view of things. It's assembler, since
+it provides near 1:1 correspondance to actual machine instructions,
+but it's HLL since the code is constructed as a HLL.</p>
+<p>It's a debate that I don't want to get into, but you may even
+want to call it a HLA (High Level Assembler), but I wouldn't go
+that far. Personally I believe it's a hybrid, or a machine
+dependant HLL. On the generation scale, eg 1GL (straight hex), 2GL
+(assembler), 3GL (HLL), 4GL (VHLL/Natural), I would place it about
+2.9GL.</p>
+<h3>What's Supported</h3>
+<p>Here is a quick list of the current programetic support:</p>
+<ul>
+<li>variable declarations (any location within code).</li>
+<li>array declarations.</li>
+<li>procedures, with inline parameter passing.</li>
+<li>if-then, if-then-else and while-do C style constructs.</li>
+<li>Inclusion of other files. (<code>lib</code> keyword).</li>
+<li>pointer assignment, and global pointer access. (both simple and
+complex pointers).</li>
+<li>unsigned integer and bitwise operations (add, sub, mul, div,
+mod, and, not, xor, or, shifts, rotates, neg).</li>
+<li>signed integer operations (mul, div, mod).</li>
+<li>floating point math operations. (add, sub, mul, div, neg).</li>
+<li>vector operations (integer and floating point).</li>
+<li>inline assembler. (Pass through to backend assembler).</li>
+<li>direct calling of OS API (via <code>syscall</code>
+keyword).</li>
+<li>symbol definitions (equates) and conditional compilation
+support.</li>
+<li>Support for structures.</li>
+<li>Basic macro support.</li>
+<li>Spinlock and Mutex support.</li>
+</ul>
+<h3>What's NOT supported (and most likely never will)</h3>
+<p>Here is a quick list of stuff is isn't currently supported, and
+most likely never will be:</p>
+<ul>
+<li>Compound operations.</li>
+<li>Logical boolean operations.</li>
+<li>Direct variable -&gt; variable operations.</li>
+</ul>
+<p>These are simple too high level...</p>
+<h3>Future Plans</h3>
+<p>The current future plans or to-do list include:</p>
+<ul>
+<li>Improved pre-processor.</li>
+</ul>
+<h2 id="Documents">Documents</h2>
+<p>B0 v0.0.23 Manual: <a href="b0-man.html">HTML</a></p>
+<p>B0 v0.1.1 IDE for Windows x64 <a href="b0-screenshots.html">Screenshots</a></p>
+<p>B0 Compiler Internals Document: <a href=
+"b0-internals.html">HTML</a> (Note: This covers v0.0.6 of the
+compiler).</p>
+<p>B0 Version History: <a href="b0-ver.html">HTML</a>.</p>
+<p>B0 Tutorial: <a href="b0-tutorial.html">HTML</a>.</p>
+<h2 id="Downloads">Downloads</h2>
+<p>B0 v0.0.23 Source (tar.gz): <a href="b0-v0.0.23.tar.gz">b0-v0.0.23.tar.gz</a> 
+(md5 = 150561872374e71d5b0202e9194cdfc5)</p>
+<p>B0 v0.0.23 Source (zip): <a href="b0-v0.0.23.zip">b0-v0.0.23.zip</a> 
+(md5 = b667854d39a26376d42e0aa19c149d62)</p>
+<p>B0 v0.0.23 Solaris Package (pkg.gz): <a href="B0core-v0.0.23-i386.pkg.gz">B0core-v0.0.23-i386.pkg.gz</a>
+(md5 = e6cff2503141d49d5c179f1a2e27068c)</p>
+<p>B0 v0.1.1 IDE for Windows x64 (includes b0 v0.0.23) : <a href="b0-v0.1.1.msi">b0-v0.1.1.msi</a>
+(md5 = 48f9ab607a5f76e82a68aee43e3e2850)</p>
+<h2>Contact Me</h2>
+<p>I'm reachable at "Chewy509&nbsp;at&nbsp;mailcity&nbsp;dot&nbsp;com" and be sure to include 'b0' in 
+   the subject line, otherwise it goes straight into the trash.</p>
+</div>
+<div class="noprint">
+<hr />
+<script type="text/javascript" src="http://ss.webring.com/navbar?f=j;y=chewy509;u=defurl">
+</script>
+<noscript>
+<table cellspacing="0" border="2" summary="WebRing Link">
+<tr>
+<td>
+<table cellpadding="2" cellspacing="0" border="0" summary="WebRing Link">
+<tr>
+<td align="center">This site is a member of WebRing.<br />
+To browse visit <a href="http://ss.webring.com/navbar?f=l;y=chewy509;u=defurl">Here</a>.</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</noscript>
+</div>
+		<div class="noprint">
+			<p class="align_right">
+				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml11" alt="Valid XHTML 1.1" height="31" width="88" /></a>
+			</p>
+		</div>
+</body>
+</html>

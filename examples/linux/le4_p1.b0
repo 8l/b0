@@ -1,0 +1,13 @@
+// Application "Hello World" for Linux;
+
+#define LOCAL_HEAP = 1000000h;			// Allocate 10MB for local thread heap;
+
+m16 string = 'Linux Example 4 for testing linking of different objects\n';
+
+proc main(argc, argv){
+	r6 = memInit();				// Setup local variable buffer!
+	r0 = &string;
+	echo(r0);
+	exit(0);
+}
+
