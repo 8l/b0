@@ -1,3 +1,83 @@
+B0
+
+Copyright © 2000-2008, Darran Kartaschew
+
+Introduction
+
+The B0 language and compiler came about during an effort to create my own Operating System. The main problem faced, was the C was too high level, and coding in assembler was a pain (even though 80% of my code is pure asm, and the other 20% is PHP for work).
+
+Being soley an assembler programmer for many years gave me a pure unrestricted environment to play in, rather than being locked down to a particular environment. Which always left a bad taste in my mouth, whenever I worked with many of the HLLs out there, (ever tried a bitwise rotate in C?). I wanted the freedom that assembler gave me, but have a HLL programming style.
+
+I looked Randall Hyde's HLA, and while the syntax is more HLL programmer friendly, it still didn't gel with me. Plus I was limited to a particular OS (Windows or Linux), becuase of the standard library it used. (Which by the way is a great library, just doesn't suit my needs as it stands).
+
+At first B0, may look like C, but once you get down and dirty, you quickly realise that it's not a bastardised C clone, but something else. The best way I would describe it, is a HLL designed to be machine dependent based a 64bit architecture.
+
+A quick word on licensing: The B0 language and this implementation are released under a BSD license.
+
+System Requirements
+
+Either a IA-32 w/EM64T or AMD64 based processor, for 64bit Operation.
+Minimum 512MB of RAM (The compiler requires approximately 140MB when compiling applications).
+64bit OS. (Any with a C compiler, and somewhat basic libc support).
+FASM v1.67.27+ (used as a backend assembler - Hi Tomasz).
+Text Editor supporting UTF-8 (Unicode Output).
+Code Example
+
+//Program 'Hello World';
+lib 'stdlib.b0';
+proc main(){ 
+    r0 = &'Hello World™\n'; 
+    echo(r0); //echo() prints the string pointed to by r0 to stdout 
+    exit(r0);
+}; 
+The always present 'Hello World™' example.
+
+Unfortunately, this little example doesn't give away that much...
+
+As you can see, it looks a lot like C and quite a few other languages. But the make up of each statement is very simple, and in most cases match the assembler output nearly 1:1.
+
+Hopefully some of the other code snippets will highlight this.
+
+What makes it different from other languages
+
+Nothing really, except that it's very minimalist and you get to play with the CPU registers within the acutal code itself. (The code focuses around the registers).
+
+Is it Assembler or a High Level Language, or both?
+
+Well that depends on your view of things. It's assembler, since it provides near 1:1 correspondance to actual machine instructions, but it's HLL since the code is constructed as a HLL.
+
+It's a debate that I don't want to get into, but you may even want to call it a HLA (High Level Assembler), but I wouldn't go that far. Personally I believe it's a hybrid, or a machine dependant HLL. On the generation scale, eg 1GL (straight hex), 2GL (assembler), 3GL (HLL), 4GL (VHLL/Natural), I would place it about 2.9GL.
+
+What's Supported
+
+Here is a quick list of the current programetic support:
+
+variable declarations (any location within code).
+array declarations.
+procedures, with inline parameter passing.
+if-then, if-then-else and while-do C style constructs.
+Inclusion of other files. (lib keyword).
+pointer assignment, and global pointer access. (both simple and complex pointers).
+unsigned integer and bitwise operations (add, sub, mul, div, mod, and, not, xor, or, shifts, rotates, neg).
+signed integer operations (mul, div, mod).
+floating point math operations. (add, sub, mul, div, neg).
+vector operations (integer and floating point).
+inline assembler. (Pass through to backend assembler).
+direct calling of OS API (via syscall keyword).
+symbol definitions (equates) and conditional compilation support.
+Support for structures.
+Basic macro support.
+Spinlock and Mutex support.
+What's NOT supported (and most likely never will)
+
+Here is a quick list of stuff is isn't currently supported, and most likely never will be:
+
+Compound operations.
+Logical boolean operations.
+Direct variable -> variable operations.
+These are simple too high level...
+
+
 B0 Compiler Package
 (c) Darran Kartaschew 2000-2008
 
